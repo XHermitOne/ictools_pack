@@ -40,6 +40,13 @@ type
     }
     function GetValueAsBoolean(APath: WideString; ADefault: Boolean=False): Boolean;
 
+    {
+    Получить значение как строку
+    @param APath: Путь до элемента. Например /L1/L2/L3
+    @param ADefault: Значение по умолчанию в случае не существующего элемента или не корректных данных.
+    }
+    function GetValueAsString(APath: WideString; ADefault: AnsiString=''): AnsiString;
+
   published
     property DefaultFileName: AnsiString read FDefaultFileName write SetDefaultFileName;
   end;
@@ -107,6 +114,15 @@ begin
     Result := ADefault
   else
     Result := LowerCase(value) = 'true';
+end;
+
+{ Получить значение как строку }
+function TICXMLConfig.GetValueAsString(APath: WideString; ADefault: AnsiString): AnsiString;
+begin
+  if FileName = '' then
+    FileName := DefaultFileName;
+
+  Result := GetValue(APath, ADefault);
 end;
 
 end.

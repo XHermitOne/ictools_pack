@@ -8,7 +8,7 @@ unit ictools;
 interface
 
 uses
-  ICSdfDataset, ICXMLConfig, LazarusPackageIntf;
+  ICSdfDataset, ICXMLConfig, ICGaugeIndicator, LazarusPackageIntf;
 
 implementation
 
@@ -16,6 +16,7 @@ procedure Register;
 begin
   RegisterUnit('ICSdfDataset', @ICSdfDataset.Register);
   RegisterUnit('ICXMLConfig', @ICXMLConfig.Register);
+  RegisterUnit('ICGaugeIndicator', @ICGaugeIndicator.Register);
 end;
 
 initialization
