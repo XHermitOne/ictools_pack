@@ -22,9 +22,9 @@
         <UnitName Value="ICXMLConfig"/>
       </Item2>
       <Item3>
-        <Filename Value="icgaugeindicator.pas"/>
+        <Filename Value="icanaloggauge.pas"/>
         <HasRegisterProc Value="True"/>
-        <UnitName Value="ICGaugeIndicator"/>
+        <UnitName Value="ICAnalogGauge"/>
       </Item3>
     </Files>
     <RequiredPkgs Count="3">
