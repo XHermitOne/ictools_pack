@@ -15,8 +15,8 @@ type
   TStyle = (LeftStyle, RightStyle, CenterStyle);
   { Опции отображения }
   TFaceOption = (ShowMargin, ShowCircles, ShowMainTicks, ShowSubTicks,
-                    ShowIndicatorMin, ShowIndicatorMid, ShowIndicatorMax,
-                    ShowValues, ShowCenter, ShowFrame, Show3D, ShowCaption);
+                 ShowIndicatorMin, ShowIndicatorMid, ShowIndicatorMax,
+                 ShowValues, ShowCenter, ShowFrame, Show3D, ShowCaption);
   TFaceOptions = set of TFaceOption;
   TAntialiased = (aaNone, aaBiline, aaTriline, aaQuadral);
 
@@ -55,17 +55,23 @@ type
     FLengthMainTicks: Integer;
     FLengthSubTicks: Integer;
     FFaceOptions: TFaceOptions;
+
     // Значения
-    FPosition: Single;
+    { Текщая позиция }
+    FPosition: Double;
+    { Диапазон значений }
     FScaleValue: Integer;
+    { Граница минимальной зоны }
     FMinimum: Double;
+    { Граница максимальной зоны }
     FMaximum: Double;
+    { Надпись }
     FCaption: string;
     // event handlers
     FOverMax: TNotifyEvent;
     FOverMin: TNotifyEvent;
     // anti-aliasing mode
-    FAntiAliased: TAntialiased;
+    FAntiAliased: TAntiAliased;
     // internal bitmaps
     FBackBitmap: TBitmap;
     FFaceBitmap: TBitmap;
@@ -97,44 +103,13 @@ type
     procedure SetLengthMainTicks(I: Integer);
     procedure SetLengthSubTicks(I: Integer);
     procedure SetFaceOptions(O: TFaceOptions);
-    procedure SetPosition(V: Single);
+    procedure SetPosition(V: Double);
     procedure SetScaleValue(I: Integer);
     procedure SetMaximum(Value: Double);
     procedure SetMinimum(Value: Double);
-    procedure SetCaption(const S: string);
+    procedure SetCaption(S: string);
     procedure SetAntiAliased(V: TAntialiased);
     function GetAAMultipler: Integer;
-    //function GetAntiAliased: TAntialiased;
-    //function GetArrowColor: TColor;
-    //function GetArrowWidth: Integer;
-    //function GetCaptionColor: TColor;
-    //function GetCenterColor: TColor;
-    //function GetCenterRadius: Integer;
-    //function GetCircleColor: TColor;
-    //function GetCircleRadius: Integer;
-    //function GetFaceColor: TColor;
-    //function GetFaceOptions: TFaceOptions;
-    //function GetFCaption: string;
-    //function GetLengthMainTicks: Integer;
-    //function GetLengthSubTicks: Integer;
-    //function GetMargin: Integer;
-    //function GetMarginColor: TColor;
-    //function GetMaxColor: TColor;
-    //function GetMaximum: Integer;
-    //function GetMidColor: TColor;
-    //function GetMinColor: TColor;
-    //function GetMinimum: Integer;
-    //function GetNumMainTicks: Integer;
-    //function GetOverMax: TOnEvent;
-    //function GetOverMin: TOnEvent;
-    //function GetPosition: Single;
-    //function GetScaleAngle: Integer;
-    //function GetScaleValue: Integer;
-    //function GetStyle: TStyle;
-    //function GetTicksColor: TColor;
-    //function GetValueColor: TColor;
-    //procedure SetOverMax(const Value: TNotifyEvent);
-    //procedure SetOverMin(const Value: TNotifyEvent);
 
   protected
     procedure DrawScale(Bitmap: TBitmap; K: Integer);
@@ -179,7 +154,7 @@ type
     property LengthMainTicks: Integer read FLengthMainTicks write SetLengthMainTicks;
     property LengthSubTicks: Integer read FLengthSubTicks write SetLengthSubTicks;
     property FaceOptions: TFaceOptions read FFaceOptions write SetFaceOptions;
-    property GaugePosition: Single read FPosition write SetPosition;
+    property GaugePosition: Double read FPosition write SetPosition;
     property Scale: Integer read FScaleValue write SetScaleValue;
     property IndMaximum: Double read FMaximum write SetMaximum;
     property IndMinimum: Double read FMinimum write SetMinimum;
@@ -257,33 +232,22 @@ begin
   FFaceOptions := [ShowMargin, ShowMainTicks, ShowSubTicks, ShowIndicatorMin, SHowindicatormid,ShowIndicatorMax,
                    ShowValues, ShowCenter, ShowFrame, ShowCaption];
   FAntiAliased := aaNone;
-
 end;
 
 procedure TICAnalogGauge.Paint;
 begin
   inherited;
-  // Установить  размеры кадров
-  //FBackBitmap.SetSize(Width, Height);
-  //FBackBitmap.SetSize(Width, Height);
-  //FBackBitmap.SetSize(Width, Height);
-
-  // Переисовка заднего кадра
-//  RedrawScale;
   ReInitialize;
-  // Перенос заднего кадра на лицевой кадр
   PaintGauge;
 end;
 
 procedure TICAnalogGauge.DrawScale(Bitmap: TBitmap; K: Integer);
 var
-  I, J, X, Y, N, M, W, H{, R}: Integer;
+  I, J, X, Y, N, M, W, H: Integer;
   Max, Min: Double;
   A, C: Single;
   SI, CO, SI1, CO1:Extended;
 begin
-  //with PGaugedata(CustomObj)^ do
-  //begin
   W := Bitmap.Width;
   H := Bitmap.Height;
   Max := FMaximum;
@@ -295,8 +259,6 @@ begin
   end;
   N := FNumMainTicks * 5;
   M := FMargin * K;
-  //R := FCircleRadius * K;
-  //with Bitmap^ do begin
   with Bitmap do
   begin
     // ***************************** Out Frame **************************
@@ -368,10 +330,6 @@ begin
       end;
     end;{case}
 
-{    // ************************************ base formula **********************************************
-    Canvas.MoveTo(X, Y);
-    Canvas.LineTo(Round(C-J*Cos((A+I*(FScaleAngle)/FNumMainTicks)*2*Pi/360)),
-                  Round(Y-J*Sin((A+I*(FScaleAngle)/FNumMainTicks)*2*Pi/360))); }
     //******************************** Out Caption *******************
     if (ShowCaption in FFaceOptions) then
     begin
@@ -382,8 +340,7 @@ begin
                      FCaption);
     end;
     //********************************** Out MinMaxLines *************************************
-    // Canvas.Pen.GeometricPen := True;
-    Canvas.Pen.EndCap := pecFlat;//Square;
+    Canvas.Pen.EndCap := pecFlat;        //Square;
     Canvas.Pen.Width := 4 * K;
     if (ShowIndicatorMax in FFaceOptions) then
     begin
@@ -453,12 +410,6 @@ begin
                        Round(Y - (J * Si - FCircleRadius * K)),
                        Round(C - (J * Co + FCircleRadius * K)),
                        Round(Y - (J * Si + FCircleRadius * K)));
-{
-        Canvas.Ellipse(Round(C-J*Co),//((A+I*(FScaleAngle)/FNumMainTicks)*2*Pi/360)) - R,
-                       Round(Y-J*Si),//((A+I*(FScaleAngle)/FNumMainTicks)*2*Pi/360)) - R,
-                       Round(C-J*Co),//((A+I*(FScaleAngle)/FNumMainTicks)*2*Pi/360)) + R,
-                       Round(Y-J*Si))//((A+I*(FScaleAngle)/FNumMainTicks)*2*Pi/360)) + R);
-}
 {/ecm}
       end;
       // ************************************* Out Values *************************************
@@ -472,17 +423,14 @@ begin
       end;
     end;
   end;
-//  end;
 end;
 
 procedure TICAnalogGauge.DrawArrow(Bitmap: TBitmap; K: Integer);
 var
   J, X, Y, M, W, H, R: Integer;
   A, C: Single;
-  Si, Co:Extended;
+  Si, Co: Extended;
 begin
-  //with PGaugedata(CustomObj)^ do
-  //begin
   M := FMargin * K;
   R := FCenterRadius * K;
   W := Bitmap.Width;
@@ -493,7 +441,6 @@ begin
     H := Math.Min(W, H);
   end;
 
-  //with Bitmap^ do begin
   with Bitmap do
   begin
     case FStyle of
@@ -550,16 +497,10 @@ begin
       Canvas.Ellipse(X - R, Y - R, X + R, Y + R);
     end;
   end;
-//  end;
 end;
 
 procedure TICAnalogGauge.RedrawArrow;
 begin
-  //with PGaugedata(CustomObj)^ do
-  //begin
-    //BitBlt(FFaceBitmap.Canvas.Handle, 0, 0, FBackBitmap.Width,
-    //  FBackBitmap.Height, FBackBitmap.Canvas.Handle, 0, 0, SRCCOPY);
-
   FFaceBitmap.Canvas.CopyRect(TRect.Create(0, 0, FBackBitmap.Width, FBackBitmap.Height),
                               FBackBitmap.Canvas,
                               TRect.Create(0, 0, FBackBitmap.Width, FBackBitmap.Height));
@@ -569,12 +510,10 @@ begin
   if FAntiAliased <> aaNone then
     FastAntiAliasPicture;
   PaintGauge;
-  //end;
 end;
 
 procedure TICAnalogGauge.RedrawScale;
 begin
-//  with PGaugedata(CustomObj)^ do
   {ecm}
   if FLockRedraw = 0 then
   {/ecm}
@@ -599,16 +538,11 @@ var
   x, y, cx, cy, cxi: Integer;
   totr, totg, totb: cardinal;
   Row1, Row2, Row3, Row4, DestRow: PRGBArray;
-  i,{ j,} k: Integer;
+  i, K: Integer;
 begin
-  //with PGaugedata(CustomObj)^ do
-  //begin
-
   // For each row
   if not Assigned(FFaceBitmap) then
     Exit;
-
-//  cx:=0;
 
   K := GetAAMultipler;
   Row2 := nil;
@@ -620,8 +554,6 @@ begin
     // We compute samples of K x K pixels
     cy := y * K;
     // Get pointers to actual, previous and next rows in supersampled bitmap
-//    j:=FFacebitmap.ScanLineSize;
-//    j:=j div 2;
     Row1 := FFaceBitmap.ScanLine[cy];
     if Row1 = nil then
       Exit;
@@ -691,19 +623,11 @@ begin
           end;
         end;
     end;
-  //end;
 end;
 
 procedure TICAnalogGauge.PaintGauge;
-//var
-//  p: TPaintSTruct;
 begin
-  //beginPaint(handle,p);
-  //with PGaugedata(CustomObj)^ do
-  //begin
   if FAntiAliased = aaNone then
-    //BitBlt(p.hdc, 0, 0, FFaceBitmap.Width,
-    //FFaceBitmap.Height,FFaceBitmap.Canvas.Handle, 0, 0, SRCCOPY)
     Canvas.CopyRect(TRect.Create(0, 0, FFaceBitmap.Width, FFaceBitmap.Height),
                     FFaceBitmap.Canvas,
                     TRect.Create(0, 0, FFaceBitmap.Width, FFaceBitmap.Height))
@@ -712,16 +636,11 @@ begin
                     FAABitmap.Canvas,
                     TRect.Create(0, 0, FAABitmap.Width, FAABitmap.Height));
 
-    //BitBlt(p.hdc, 0, 0, FAABitmap.Width,
-    //FAABitmap.Height, FAABitmap.Canvas.Handle, 0, 0, SRCCOPY);
-//  end;
-//  endpaint(handle,p);
 end;
 
 { ------------------------------------------------------------------------- }
 procedure TICAnalogGauge.SetMinColor(C: TColor);
 begin
-//  with PGaugedata(CustomObj)^ do
   if C <> FMinColor then
   begin
     FMinColor := C;
@@ -731,7 +650,6 @@ end;
 
 procedure TICAnalogGauge.SetMidColor(C: TColor);
 begin
-  //with PGaugedata(CustomObj)^ do
   if C <> FMidColor then
   begin
     FMidColor := C;
@@ -741,7 +659,6 @@ end;
 
 procedure TICAnalogGauge.SetMaxColor(C: TColor);
 begin
-  //with PGaugedata(CustomObj)^ do
   if C <> FMaxColor then
   begin
     FMaxColor := C;
@@ -751,7 +668,6 @@ end;
 
 procedure TICAnalogGauge.SetFaceColor(C: TColor);
 begin
-  //with PGaugedata(CustomObj)^ do
   if C <> FFaceColor then
   begin
     FFaceColor := C;
@@ -761,7 +677,6 @@ end;
 
 procedure TICAnalogGauge.SetTicksColor(C: TColor);
 begin
-  //with PGaugedata(CustomObj)^ do
   if C <> FTicksColor then
   begin
     FTicksColor := C;
@@ -771,7 +686,6 @@ end;
 
 procedure TICAnalogGauge.SetValueColor(C: TColor);
 begin
-   //with PGaugedata(CustomObj)^ do
   if C <> FValueColor then
   begin
     FValueColor := C;
@@ -781,7 +695,6 @@ end;
 
 procedure TICAnalogGauge.SetCaptionColor(C: TColor);
 begin
-  //with PGaugedata(CustomObj)^ do
   if C <> FCaptionColor then
   begin
     FCaptionColor := C;
@@ -791,7 +704,6 @@ end;
 
 procedure TICAnalogGauge.SetArrowColor(C: TColor);
 begin
-  //with PGaugedata(CustomObj)^ do
   if C <> FArrowColor then
   begin
     FArrowColor := C;
@@ -801,7 +713,6 @@ end;
 
 procedure TICAnalogGauge.SetMarginColor(C: TColor);
 begin
-  //with PGaugedata(CustomObj)^ do
   if C <> FMarginColor then
   begin
     FMarginColor := C;
@@ -811,7 +722,6 @@ end;
 
 procedure TICAnalogGauge.SetCenterColor(C: TColor);
 begin
-  //with PGaugedata(CustomObj)^ do
   if C <> FCenterColor then
   begin
     FCenterColor := C;
@@ -821,7 +731,6 @@ end;
 
 procedure TICAnalogGauge.SetCircleColor(C: TColor);
 begin
-  //with PGaugedata(CustomObj)^ do
   if C <> FCircleColor then
   begin
     FCircleColor := C;
@@ -831,7 +740,6 @@ end;
 
 procedure TICAnalogGauge.SetCenterRadius(I: Integer);
 begin
-  //with PGaugedata(CustomObj)^ do
   if I <> FCenterRadius then
   begin
     FCenterRadius := I;
@@ -841,7 +749,6 @@ end;
 
 procedure TICAnalogGauge.SetCircleRadius(I: Integer);
 begin
-  //with PGaugedata(CustomObj)^ do
   if I <> FCircleRadius then
   begin
     FCircleRadius := I;
@@ -851,7 +758,6 @@ end;
 
 procedure TICAnalogGauge.SetScaleAngle(I: Integer);
 begin
-  //with PGaugedata(CustomObj)^ do
   if I <> FScaleAngle then
   begin
     if (I > 10) and (I <= 360) then
@@ -862,7 +768,6 @@ end;
 
 procedure TICAnalogGauge.SetMargin(I: Integer);
 begin
-  //with PGaugedata(CustomObj)^ do
   if I <> FMargin then
   begin
     FMargin := I;
@@ -872,7 +777,6 @@ end;
 
 procedure TICAnalogGauge.SetStyle(S: TStyle);
 begin
-  //with PGaugedata(CustomObj)^ do
   if S <> FStyle then
   begin
     FStyle := S;
@@ -882,7 +786,6 @@ end;
 
 procedure TICAnalogGauge.SetArrowWidth(I: Integer);
 begin
-  //with PGaugedata(CustomObj)^ do
   if I <> FArrowWidth then
   begin
     if I < 1 then
@@ -898,7 +801,6 @@ end;
 
 procedure TICAnalogGauge.SetNumMainTicks(I: Integer);
 begin
-  //with PGaugedata(CustomObj)^ do
   if I <> FNumMainTicks then
   begin
     FNumMainTicks := I;
@@ -908,7 +810,6 @@ end;
 
 procedure TICAnalogGauge.SetLengthMainTicks(I: Integer);
 begin
-  //with PGaugedata(CustomObj)^ do
   if I <> FLengthMainTicks then
   begin
     FLengthMainTicks := I;
@@ -918,7 +819,6 @@ end;
 
 procedure TICAnalogGauge.SetLengthSubTicks(I: Integer);
 begin
-  //with PGaugedata(CustomObj)^ do
   if I <> FLengthSubTicks then
   begin
     FLengthSubTicks := I;
@@ -928,7 +828,6 @@ end;
 
 procedure TICAnalogGauge.SetFaceOptions(O: TFaceOptions);
 begin
-  //with PGaugedata(CustomObj)^ do
   if O <> FFaceOptions then
   begin
     FFaceOptions := O;
@@ -936,9 +835,8 @@ begin
   end;
 end;
 
-procedure TICAnalogGauge.SetPosition(V: Single);
+procedure TICAnalogGauge.SetPosition(V: Double);
 begin
-  //with PGaugedata(CustomObj)^ do
   if V <> FPosition then
   begin
     FPosition := V;
@@ -952,7 +850,6 @@ end;
 
 procedure TICAnalogGauge.SetScaleValue(I: Integer);
 begin
-  //with PGaugedata(CustomObj)^ do
   if I <> FScaleValue then
   begin
     if I > 1 then
@@ -969,7 +866,6 @@ end;
 
 procedure TICAnalogGauge.SetMaximum(Value: Double);
 begin
-  //with PGaugedata(CustomObj)^ do
   if Value <> FMaximum then
   begin
     if (Value > 0) and (Value < FScaleValue) then
@@ -980,7 +876,6 @@ end;
 
 procedure TICAnalogGauge.SetMinimum(Value: Double);
 begin
-  //with PGaugedata(CustomObj)^ do
    if Value <> FMinimum then
    begin
      if (Value > 0) and (Value < FScaleValue) then
@@ -989,10 +884,9 @@ begin
   end
 end;
 
-procedure TICAnalogGauge.SetCaption(const S: string);
+procedure TICAnalogGauge.SetCaption(S: string);
 begin
   //TODO
-  //with PGaugedata(CustomObj)^ do
   if S <> FCaption then
   begin
     Canvas.Font.Assign(Font);
@@ -1002,10 +896,7 @@ begin
 end;
 
 procedure TICAnalogGauge.SetAntiAliased(V: TAntialiased);
-//var
-//  K: Integer;
 begin
-  //with PGaugedata(CustomObj)^ do
   if V <> FAntiAliased then
   begin
     FAntiAliased := V;
@@ -1015,7 +906,6 @@ end;
 
 function TICAnalogGauge.GetAAMultipler: Integer;
 begin
-  //with PGaugedata(CustomObj)^ do
   case FAntiAliased of
     aaBiline: Result := 2;
     aaTriline: Result := 3;
@@ -1024,261 +914,10 @@ begin
   end
 end;
 
-
-//function TICAnalogGauge.GetAntiAliased: TAntialiased;
-//var
-//  d: PGaugeData;
-//begin
-//  d:=PGaugedata(CustomObj);
-//  Result:=d.FAntiAliased;
-//end;
-
-//function TICAnalogGauge.GetArrowColor: TColor;
-//var
-//  d:PGaugeData;
-//begin
-//  d:=PGaugedata(CustomObj);
-//  Result:=d.FArrowColor;
-//end;
-
-//function TICAnalogGauge.GetArrowWidth: Integer;
-//var
-//  d:PGaugeData;
-//begin
-//  d:=PGaugedata(CustomObj);
-//  Result:=d.FArrowWidth;
-//end;
-
-//function TICAnalogGauge.GetCaptionColor: TColor;
-//var
-//  d:PGaugeData;
-//begin
-//  d:=PGaugedata(CustomObj);
-//  Result:=d.FCaptionColor;
-//end;
-
-//function TICAnalogGauge.GetCenterColor: TColor;
-//var
-//  d:PGaugeData;
-//begin
-//  d:=PGaugedata(CustomObj);
-//  Result:=d.Fcentercolor;
-//end;
-
-//function TICAnalogGauge.GetCenterRadius: Integer;
-//var
-//  d:PGaugeData;
-//begin
-//  d:=PGaugedata(CustomObj);
-//  Result:=d.FCenterRadius;
-//end;
-
-//function TICAnalogGauge.GetCircleColor: TColor;
-//var
-//  d:PGaugeData;
-//begin
-//  d:=PGaugedata(CustomObj);
-//  Result:=d.FCircleColor;
-//end;
-
-//function TICAnalogGauge.GetCircleRadius: Integer;
-//var
-//  d:PGaugeData;
-//begin
-//  d:=PGaugedata(CustomObj);
-//  Result:=d.FCircleRadius;
-//end;
-
-//function TICAnalogGauge.GetFaceColor: TColor;
-//var
-//  d:PGaugeData;
-//begin
-//  d:=PGaugedata(CustomObj);
-//  Result:=d.FFaceColor;
-//end;
-
-//function TICAnalogGauge.GetFaceOptions: TFaceOptions;
-//var
-//  d:PGaugeData;
-//begin
-//  d:=PGaugedata(CustomObj);
-//  Result:=d.FFaceOptions;
-//end;
-
-//function TICAnalogGauge.GetFCaption: string;
-//var
-//  d:PGaugeData;
-//begin
-//  d:=PGaugedata(CustomObj);
-//  Result:=d.FCaption;
-//end;
-
-//function TICAnalogGauge.GetLengthMainTicks: Integer;
-//var
-//  d:PGaugeData;
-//begin
-//  d:=PGaugedata(CustomObj);
-//  Result:=d.FLengthMainTicks;
-//end;
-
-//function TICAnalogGauge.GetLengthSubTicks: Integer;
-//var
-//  d:PGaugeData;
-//begin
-//  d:=PGaugedata(CustomObj);
-//  Result:=d.FLengthSubTicks;
-//end;
-
-//function TICAnalogGauge.GetMargin: Integer;
-//var
-//  d:PGaugeData;
-//begin
-//  d:=PGaugedata(CustomObj);
-//  Result:=d.FMargin;
-//end;
-
-//function TICAnalogGauge.GetMarginColor: TColor;
-//var
-//  d:PGaugeData;
-//begin
-//  d:=PGaugedata(CustomObj);
-//  Result:=d.FMarginColor;
-//end;
-
-//function TICAnalogGauge.GetMaxColor: TColor;
-//var
-//  d:PGaugeData;
-//begin
-//  d:=PGaugedata(CustomObj);
-//  Result:=d.FMaxColor;
-//end;
-
-//function TICAnalogGauge.GetMaximum: Integer;
-//var
-//  d:PGaugeData;
-//begin
-//  d:=PGaugedata(CustomObj);
-//  Result:=d.FMaximum;
-//end;
-
-//function TICAnalogGauge.GetMidColor: TColor;
-//var
-//  d:PGaugeData;
-//begin
-//  d:=PGaugedata(CustomObj);
-//  Result:=d.FMidColor;
-//end;
-//
-//function TICAnalogGauge.GetMinColor: TColor;
-//var
-//  d:PGaugeData;
-//begin
-//  d:=PGaugedata(CustomObj);
-//  Result:=d.FMinColor;
-//end;
-//
-//function TICAnalogGauge.GetMinimum: Integer;
-//var
-//  d:PGaugeData;
-//begin
-//  d:=PGaugedata(CustomObj);
-//  Result:=d.FMinimum;
-//end;
-//
-//function TICAnalogGauge.GetNumMainTicks: Integer;
-//var
-//  d:PGaugeData;
-//begin
-//  d:=PGaugedata(CustomObj);
-//  Result:=d.FNumMainTicks;
-//end;
-//
-//function TICAnalogGauge.GetOverMax: TOnEvent;
-//var
-//  d:PGaugeData;
-//begin
-//  d:=PGaugedata(CustomObj);
-//  Result:=d.FOverMax;
-//end;
-//
-//function TICAnalogGauge.GetOverMin: TOnEvent;
-//var
-//  d:PGaugeData;
-//begin
-//  d:=PGaugedata(CustomObj);
-//  Result:=d.FOverMin;
-//end;
-//
-//function TICAnalogGauge.GetPosition: Single;
-//var
-//  d:PGaugeData;
-//begin
-//  d:=PGaugedata(CustomObj);
-//  Result:=d.FPosition;
-//end;
-//
-//function TICAnalogGauge.GetScaleAngle: Integer;
-//var
-//  d:PGaugeData;
-//begin
-//  d:=PGaugedata(CustomObj);
-//  Result:=d.FScaleAngle;
-//end;
-//
-//function TICAnalogGauge.GetScaleValue: Integer;
-//var
-//  d:PGaugeData;
-//begin
-//  d:=PGaugedata(CustomObj);
-//  Result:=d.FScaleValue;
-//end;
-//
-//function TICAnalogGauge.GetStyle: TStyle;
-//var
-//  d:PGaugeData;
-//begin
-//  d:=PGaugedata(CustomObj);
-//  Result:=d.FStyle;
-//end;
-//
-//function TICAnalogGauge.GetTicksColor: TColor;
-//var
-//  d:PGaugeData;
-//begin
-//  d:=PGaugedata(CustomObj);
-//  Result:=d.FTicksColor;
-//end;
-//
-//function TICAnalogGauge.GetValueColor: TColor;
-//var
-//  d:PGaugeData;
-//begin
-//  d:=PGaugedata(CustomObj);
-//  Result:=d.FValueColor;
-//end;
-//
-//procedure TICAnalogGauge.SetOverMax(const Value: TOnEvent);
-//var
-//  d:PGaugeData;
-//begin
-//  d:=PGaugedata(CustomObj);
-//  d.FOverMax:=Value;;
-//end;
-//
-//procedure TICAnalogGauge.SetOverMin(const Value: TOnEvent);
-//var
-//  d:PGaugeData;
-//begin
-//  d:=PGaugedata(CustomObj);
-//  d.FOverMin:=Value;
-//end;
-
 procedure TICAnalogGauge.ReInitialize;
 var
   K:integer;
 begin
-  //with PGaugedata(CustomObj)^ do
-  //begin
   if Width < 30 then
     Width := 30;
   if Height < 30 then
@@ -1295,10 +934,6 @@ begin
   if Assigned(FAABitmap) then
     FAABitmap.Free;
 
-  //FBackBitmap:=NewdibBitmap( Width * K, Height * K,pf24Bit);
-  //FFaceBitmap:=NewDibBitmap(Width * K, Height * K, pf24Bit);
-  //FAABitmap:=NewDibBitmap(Width,Height,pf24Bit);
-
   FBackBitmap := TBitmap.Create;
   FBackBitmap.SetSize(Width * K, Height * K);
   FFaceBitmap := TBitmap.Create;
@@ -1312,55 +947,21 @@ begin
   FBackBitmap.Canvas.Font.Height := FAABitmap.Canvas.Font.Height * K;
   FBackBitmap.Canvas.Font.Quality := fqAntiAliased;
   RedrawScale;
-    //end;
 end;
 
-{ TGaugeData }
-
-//destructor TGaugeData.destroy;
-//begin
-//  if assigned(FFacebitmap) then FFaceBitmap.Free;
-//  if assigned(FBackBitmap) then FBackBitmap.Free;
-//  if assigned(FaaBitmap) then FaaBitmap.Free;
-//  inherited;
-//end;
-
-//procedure TGaugeData.init;
-//begin
-//    inherited;
-//    FFaceColor := clwindow; FTicksColor := clBlack; FValueColor := clBlack;
-//    FCaptionColor := clRed; FArrowColor := clBlack; FMarginColor := clSilver;
-//    FCenterColor := clWindow; FCircleColor := clBtnFace; FMinColor := clGreen;
-//    FMidColor := clLime; FMaxColor := clRed;
-//    FArrowWidth := 1; FPosition := 0; FMargin := 4;  FStyle := CenterStyle;
-//    FScaleValue := 120; FMaximum := 100; FMinimum := 20; FScaleAngle := 100;
-//    FCircleRadius := 1; FCenterRadius := 3; FNumMainTicks := 12;
-//    FLengthMainTicks := 15; FLengthSubTicks := 8; FCaption := 'dB';
-//    FFaceOptions := [ShowMargin, ShowMainTicks, ShowSubTicks, ShowIndicatorMin, SHowindicatormid,ShowIndicatorMax,
-//                     ShowValues, ShowCenter, ShowFrame, Show3D, ShowCaption];
-//    FAntiAliased := aaQuadral;
-//
-//end;
 {ecm}
 procedure TICAnalogGauge.LockRedraw;
-//var
-//  d:PGaugeData;
 begin
-  //d:=PGaugedata(CustomObj);
   Inc(FLockRedraw);
 end;
 
 procedure TICAnalogGauge.UnLockRedraw;
-//var
-//  d:PGaugeData;
 begin
-  //d:=PGaugedata(CustomObj);
   if FLockRedraw > 0 then
     Dec(FLockRedraw);
   if FLockRedraw = 0 then
     RedrawScale;
 end;
 {/ecm}
-
 
 end.
