@@ -1,5 +1,7 @@
 {
 Модуль компонента управления файлом XML.
+
+Версия: 0.0.2
 }
 unit ICXMLConfig;
 
@@ -47,6 +49,11 @@ type
     }
     function GetValueAsString(APath: WideString; ADefault: AnsiString=''): AnsiString;
 
+    {
+    Запуск редактора конфигурационного файла XML
+    }
+    function Edit(): Boolean;
+
   published
     property DefaultFileName: AnsiString read FDefaultFileName write SetDefaultFileName;
   end;
@@ -54,6 +61,9 @@ type
 procedure Register;
 
 implementation
+
+uses
+  edit_xml_config_form;
 
 procedure Register;
 begin
@@ -123,6 +133,15 @@ begin
     FileName := DefaultFileName;
 
   Result := GetValue(APath, ADefault);
+end;
+
+{
+Запуск редактора конфигурационного файла XML
+}
+function TICXMLConfig.Edit(): Boolean;
+begin
+  edit_xml_config_form.EditXmlConfigForm.EditConfig(self);
+  Result := True;
 end;
 
 end.
