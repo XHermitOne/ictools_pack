@@ -12,6 +12,7 @@ interface
 
 uses
   Classes, SysUtils, LResources, Forms, Controls, Graphics, Dialogs, db,
+  SQLdb,
   dictionary, logfunc, strfunc, mathfunc;
 
 const
@@ -39,6 +40,8 @@ type
     { Имя колонки активации элемента справочника }
     FActiveColumnName: String;
 
+    { Наименование таблицы }
+    FTableName: String;
   protected
 
   public
@@ -86,7 +89,7 @@ type
     { Получить длину кода уровня }
     function GetLevelCodLen(ALevel: Integer): Integer;
     { Получить код в виде списка }
-    function GetCodAsList(ACod: String): TStingList;
+    function GetCodAsList(ACod: String): TStringList;
     { Количество уровней }
     function GetLevelCount(): Integer;
     { Получить список записей уровня по коду }
@@ -115,14 +118,15 @@ type
     function DelRecByCod(ACod: String): Boolean;
 
   published
-    property CodColumnName: String read FCodColumnName write FCodColumnName default DEFAULT_COD_COLUMN_NAME;
-    property NameColumnName: String read FNameColumnName write FNameColumnName default DEFAULT_NAME_COLUMN_NAME;
-    property ActiveColumnName: String read FActiveColumnName write FActiveColumnName default DEFAULT_ACTIVE_COLUMN_NAME;
+    property CodColumnName: String read FCodColumnName write FCodColumnName;
+    property NameColumnName: String read FNameColumnName write FNameColumnName;
+    property ActiveColumnName: String read FActiveColumnName write FActiveColumnName;
+
+    property TableName: String read FTableName write FTableName;
 
     property CodLen: TStringList read FCodLen write FCodLen;
     property LevelLabels: TStringList read FLevelLabels write FLevelLabels;
     property CanEdit: Boolean read FCanEdit write FCanEdit;
-
 
   end;
 
@@ -140,10 +144,10 @@ end;
 function TICRefObjDataSource.GetRecByCod(ACod: String): TDataSet;
 begin
   if DataSet.Locate(CodColumnName, ACod, []) then
-    Result := DataSet;
+    Result := DataSet
   else
   begin
-    logfunc.WarningMsgFmt(u'Код <%s> не найден в справочнике <%s>, [ACod, Name]);
+    logfunc.WarningMsgFmt('Код <%s> не найден в справочнике <%s>', [ACod, Name]);
     Result := Nil;
   end;
 end;
@@ -152,10 +156,10 @@ end;
 function TICRefObjDataSource.GetRecByColValue(AColumnName: String; AColumnValue: String): TDataSet;
 begin
   if DataSet.Locate(AColumnName, AColumnValue, []) then
-    Result := DataSet;
+    Result := DataSet
   else
   begin
-    logfunc.WarningMsgFmt(u'Запись, соответствующая <%s : (%s)> не найдена в справочнике <%s>, [AColumnName, AColumnValue, Name]);
+    logfunc.WarningMsgFmt('Запись, соответствующая <%s : (%s)> не найдена в справочнике <%s>', [AColumnName, AColumnValue, Name]);
     Result := Nil;
   end;
 end;
@@ -167,7 +171,7 @@ var
 begin
   data_set := GetRecByColValue(AColumnName, AColumnValue);
   if data_set <> Nil then
-    Result := data_set.FieldByName(CodColumnName).AsString;
+    Result := data_set.FieldByName(CodColumnName).AsString
   else
     Result := '';
 end;
@@ -176,7 +180,7 @@ end;
 { Поиск записей по значению колонки }
 function TICRefObjDataSource.SearchRecsByColValue(AColumnName: String; AColumnValue: String): TDataSet;
 var
-  search_query: TQuery;
+  search_query: TSQLQuery;
 begin
   // search_query.
   search_query.Close;
@@ -187,7 +191,7 @@ begin
 
   if not search_query.Prepared then
     search_query.Prepare;
-  search_query.ParamByName('table_name').Value := DataSet.TableName;
+  search_query.ParamByName('table_name').Value := TableName;
   search_query.ParamByName('column_name').Value := AColumnName;
   search_query.ParamByName('column_value').Value := AColumnValue;
   search_query.Open;
@@ -207,7 +211,7 @@ begin
   search_dataset.First;
   while not search_dataset.EOF do
     begin
-      Result.Add(search_dataset.FieldByName(CodColumnName));
+      Result.Add(search_dataset.FieldValues[CodColumnName].AsString);
       search_dataset.Next;
     end;
   search_dataset.Destroy();
@@ -219,7 +223,7 @@ function TICRefObjDataSource.SearchRecsByColContent(AColumnName: String; ASearch
                                 										ADoSort: Boolean;
                                 										AOrderBy: String): TDataSet;
 var
-  search_query: TQuery;
+  search_query: TSQLQuery;
 begin
   // search_query.
   search_query.Close;
@@ -230,9 +234,9 @@ begin
 
   if not search_query.Prepared then
     search_query.Prepare;
-  search_query.ParamByName('table_name').Value := DataSet.TableName;
+  search_query.ParamByName('table_name').Value := TableName;
   search_query.ParamByName('column_name').Value := AColumnName;
-  search_query.ParamByName('column_value').Value := AColumnValue;
+  search_query.ParamByName('column_value').Value := ASearchText;
   if ACaseSensitive then
     search_query.ParamByName('operation_like').Value := 'ILIKE'
   else
@@ -255,13 +259,13 @@ end;
 { Поиск записей по значениям нескольких колонок }
 function TICRefObjDataSource.SearchRecords(AColumnValues: TStrDictionary): TDataSet;
 var
-  search_query: TQuery;
+  search_query: TSQLQuery;
   sql_text, sql_where_params: String;
   key, value: AnsiString;
   i: Integer;
 begin
 
-  for i := 0 in AColumnValues.GetKeys().Items.Count - 1 do
+  for i := 0 to AColumnValues.GetKeys().Count - 1 do
   begin
     key := AColumnValues.GetKey(i);
     // value := AColumnValues.GetStrValue(key);
@@ -271,7 +275,7 @@ begin
       sql_where_params := sql_where_params + Format(' AND :%s_column = :%s_value', [key, key]);
   end;
   sql_text := Format('SELECT * FROM :table_name WHERE (%s)', [sql_where_params]);
-  logfunc.DebugMsgFmt(u'SQL format: %s', [sql_text]);
+  logfunc.DebugMsgFmt('SQL format: %s', [sql_text]);
 
   // search_query.
   search_query.Close;
@@ -282,8 +286,8 @@ begin
 
   if not search_query.Prepared then
     search_query.Prepare;
-  search_query.ParamByName('table_name').Value := DataSet.TableName;
-  for i := 0 in AColumnValues.GetKeys().Items.Count - 1 do
+  search_query.ParamByName('table_name').Value := TableName;
+  for i := 0 to AColumnValues.GetKeys().Count - 1 do
   begin
     key := AColumnValues.GetKey(i);
     value := AColumnValues.GetStrValue(key);
@@ -307,7 +311,7 @@ begin
   search_dataset.First;
   while not search_dataset.EOF do
     begin
-      Result.Add(search_dataset.FieldByName(CodColumnName));
+      Result.Add(search_dataset.FieldValues[CodColumnName].AsString);
       search_dataset.Next;
     end;
   search_dataset.Destroy();
@@ -328,7 +332,7 @@ begin
   if AColumnName = '' then
     AColumnName := CodColumnName;
 
-  Result := SearchRecsByColContent(AColumnName, ASearchText, ACaseSensitive, ADoSort);
+  Result := SearchRecsByColContent(AColumnName, ASearchText, ACaseSensitive, ADoSort, CodColumnName);
   if Result <> Nil then
     Result.First;
 end;
@@ -343,9 +347,9 @@ begin
   Result := TStrDictionary.Create();
 
   data_set := GetRecByCod(ACod);
-  for i := 0 to AColumnNames.Items.Count - 1 do
+  for i := 0 to AColumnNames.Count - 1 do
   begin
-    column_name := AColumnNames.Items[i];
+    column_name := AColumnNames.Strings[i];
     value := data_set.FieldValues[column_name].AsString;
     Result.AddStrValue(column_name, value);
   end;
@@ -400,38 +404,39 @@ end;
 { Получить длину кода уровня }
 function TICRefObjDataSource.GetLevelCodLen(ALevel: Integer): Integer;
 begin
-  Result := StrToInt(CodLen.Items[ALevel]);
+  Result := StrToInt(CodLen.Strings[ALevel]);
 end;
 
 { Получить код в виде списка }
-function TICRefObjDataSource.GetCodAsList(ACod: String): TStingList;
+function TICRefObjDataSource.GetCodAsList(ACod: String): TStringList;
 var
+  i: Integer;
   i_start, i_stop: Integer;
   sub_cod: AnsiString;
 begin
   Result := TStringList.Create();
-  if CodLen.Items.Count > 0 then
-    for i := 0 to CodLen.Items.Count - 1 do
+  if CodLen.Count > 0 then
+    for i := 0 to CodLen.Count - 1 do
     begin
       i_start := mathfunc.SumRangeAsInteger(CodLen, 0, i);
       i_stop := mathfunc.SumRangeAsInteger(CodLen, 0, i + 1);
       sub_cod := Copy(ACod, i_start, i_stop);
-      Result.AddStrValue(sub_cod);
+      Result.Add(sub_cod);
     end
   else
-    Result.AddStrValue(ACod);
+    Result.Add(ACod);
 end;
 
 { Количество уровней }
 function TICRefObjDataSource.GetLevelCount(): Integer;
 begin
-  Result := CodLen.Items.Count;
+  Result := CodLen.Count;
 end;
 
 { Получить список записей уровня по коду }
 function TICRefObjDataSource.GetLevelRecsByCod(ACod: String): TDataSet;
 var
-  search_query: TQuery;
+  search_query: TSQLQuery;
 begin
   // search_query.
   search_query.Close;
@@ -442,7 +447,7 @@ begin
 
   if not search_query.Prepared then
     search_query.Prepare;
-  search_query.ParamByName('table_name').Value := DataSet.TableName;
+  search_query.ParamByName('table_name').Value := TableName;
   search_query.ParamByName('column_name').Value := CodColumnName;
   search_query.ParamByName('cod_value').Value := ACod;
   search_query.Open;
@@ -483,9 +488,9 @@ function TICRefObjDataSource.GetLevelIdxByCod(ACod: String): Integer;
 var
   i: Integer;
 begin
-  for i := 0 to CodLen.Items.Count - 1 do
+  for i := 0 to CodLen.Count - 1 do
   begin
-    level_cod_len := CodLen.Items[i];
+    // level_cod_len := StrToInt(CodLen.Strings[i]);
     if Length(ACod) = mathfunc.SumRangeAsInteger(CodLen, 0, i+1) then
     begin
       Result := i;
@@ -503,7 +508,7 @@ var
 begin
   cod_list := GetCodAsList(ACod);
   level_count := GetLevelCount();
-  Result := cod_list.Items.Count < level_count;
+  Result := cod_list.Count < level_count;
 end;
 
 { Это код над-родительского уровня? }
@@ -514,7 +519,7 @@ var
 begin
   cod_list := GetCodAsList(ACod);
   level_count := GetLevelCount();
-  Result := cod_list.Items.Count < (level_count - 1);
+  Result := cod_list.Count < (level_count - 1);
 end;
 
 { Запустить справочник на редактирование }

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
-  <Package Version="4">
+  <Package Version="5">
     <Name Value="ictools"/>
     <Type Value="RunAndDesignTime"/>
     <CompilerOptions>
@@ -10,7 +10,7 @@
       </SearchPaths>
     </CompilerOptions>
     <Version Release="1" Build="1"/>
-    <Files Count="6">
+    <Files Count="8">
       <Item1>
         <Filename Value="icsdfdataset.pas"/>
         <HasRegisterProc Value="True"/>
@@ -40,17 +40,30 @@
         <Filename Value="edit_xml_config_form.pas"/>
         <UnitName Value="edit_xml_config_form"/>
       </Item6>
+      <Item7>
+        <Filename Value="icrefobjdatasource.pas"/>
+        <HasRegisterProc Value="True"/>
+        <UnitName Value="ICRefObjDataSource"/>
+      </Item7>
+      <Item8>
+        <Filename Value="choice_ref_obj_form.pas"/>
+        <UnitName Value="choice_ref_obj_form"/>
+      </Item8>
     </Files>
-    <RequiredPkgs Count="3">
+    <CompatibilityMode Value="True"/>
+    <RequiredPkgs Count="4">
       <Item1>
-        <PackageName Value="SDFLaz"/>
+        <PackageName Value="treelistviewpackage"/>
       </Item1>
       <Item2>
-        <PackageName Value="icutils"/>
+        <PackageName Value="SDFLaz"/>
       </Item2>
       <Item3>
-        <PackageName Value="FCL"/>
+        <PackageName Value="icutils"/>
       </Item3>
+      <Item4>
+        <PackageName Value="FCL"/>
+      </Item4>
     </RequiredPkgs>
     <UsageOptions>
       <UnitPath Value="$(PkgOutDir)"/>

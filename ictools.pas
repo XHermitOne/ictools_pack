@@ -9,7 +9,7 @@ interface
 
 uses
   ICSdfDataset, ICXMLConfig, ICAnalogGauge, ICLogComboBoxEx, ICLogImageList, 
-  edit_xml_config_form, LazarusPackageIntf;
+  edit_xml_config_form, ICRefObjDataSource, LazarusPackageIntf;
 
 implementation
 
@@ -20,6 +20,7 @@ begin
   RegisterUnit('ICAnalogGauge', @ICAnalogGauge.Register);
   RegisterUnit('ICLogComboBoxEx', @ICLogComboBoxEx.Register);
   RegisterUnit('ICLogImageList', @ICLogImageList.Register);
+  RegisterUnit('ICRefObjDataSource', @ICRefObjDataSource.Register);
 end;
 
 initialization
