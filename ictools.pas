@@ -9,7 +9,8 @@ interface
 
 uses
   ICSdfDataset, ICXMLConfig, ICAnalogGauge, ICLogComboBoxEx, ICLogImageList, 
-  edit_xml_config_form, ICRefObjDataSource, LazarusPackageIntf;
+  edit_xml_config_form, ICRefObjDataSource, choice_ref_obj_form, 
+  LazarusPackageIntf;
 
 implementation
 

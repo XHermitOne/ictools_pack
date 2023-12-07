@@ -26,6 +26,8 @@ type
   { Источник данных. Справочник }
   TICRefObjDataSource = class(TDataSource)
   private
+    { Описание справочника }
+    FDEscription: AnsiString;
     { Длины кодов уровней }
     FCodLen: TStringList;
     { Наименонивание уровней }
@@ -118,6 +120,7 @@ type
     function DelRecByCod(ACod: String): Boolean;
 
   published
+    property Description: AnsiString read FDescription write FDescription;
     property CodColumnName: String read FCodColumnName write FCodColumnName;
     property NameColumnName: String read FNameColumnName write FNameColumnName;
     property ActiveColumnName: String read FActiveColumnName write FActiveColumnName;
