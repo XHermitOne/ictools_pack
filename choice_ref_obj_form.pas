@@ -15,6 +15,7 @@ uses
 
 const
   SORT_REVERSE_SIGN = '-';
+  TREE_ITEM_LABEL = '...';
 
 type
 
@@ -29,7 +30,7 @@ type
     Label1: TLabel;
     FindSpeedButton: TSpeedButton;
     RefObjTreeListView: TTreeListView;
-  private
+  protected
     FRefObj: TICRefObjDataSource;
     //FImageList: TImageList;
     { Имена отображаемых полей }
@@ -51,7 +52,6 @@ type
     function GetSortField(ASortColumn: String): String;
     function GetSortField(ASortColumn: Integer): String;
     function GetSortFieldIdx(ASortColumn: String): Integer;
-    function GetSortFieldIdx(ASortColumn: Integer): Integer;
 
   public
     { Установить справочник для формы }
@@ -61,19 +61,20 @@ type
     { Заполнить дерево справочника }
     procedure SetRefObjTree(ASortColumn: Array of string);
     { Обновить дерево справочника }
-    function RefreshRefObjTree();
+    procedure RefreshRefObjTree(ASortColumn: Array of string);
     { Проверка обратной сортировки }
-    function IsReverseSort();
+    function IsReverseSort(ASortColumn: String): Boolean;
+    function IsReverseSort(ASortColumn: Integer): Boolean;
     { Отсортировать набор записей }
-    function SortRefObjRecordset(ARecordSet: TDataSet; ASortColumn: Array of string): TDataSet;
+    function SortRefObjRecordset(ARecordSet: TDataSet; ASortColumn: String): TDataSet;
     { Установить элемент дерева }
-    function SetRefObjItem();
+    procedure SetRefObjTreeItem(AParentItem: TTreeListViewItem; ARecordSet: TDataSet);
     { Наити элемент дерева }
-    function FindTreeChildItem();
+    function FindTreeChildItem(AItemText: AnsiString; ACurItem: TTreeListViewItem): TTreeListViewItem;
     { Инициализация ветки дерева }
-    function InitLevelTree();
+    procedure InitLevelTree(AItem: TTreeListViewItem; ARecordSet: TDataSet);
     { Поиск элемента дерева по коду }
-    function FindRefObjTreeItem();
+    function FindRefObjTreeItem(AParentItem: TTreeListViewItem; ACode: String; ARecordSet: TDataSet): TTreeListViewItem;
     { Найти и выделить элемент дерева по коду }
     function SelectRefObjTreeItem();
     { Получить выбранный код }
@@ -287,8 +288,22 @@ begin
   Screen.EndWaitCursor;
 end;
 
-function TChoiceRefObjForm.SortRefObjRecordset(ARecordSet: TDataSet; ASortColumn: Array of string): TDataSet;
+function TChoiceRefObjForm.SortRefObjRecordset(ARecordSet: TDataSet; ASortColumn: String): TDataSet;
+var
+  sort_field: String;
 begin
+  if ARecordSet.IsEmpty() then
+  begin
+    Result := ARecordSet;
+    Exit;
+  end;
+
+  sort_field := GetSortField(ASortColumn);
+
+  if not strfunc.IsEmpty(sort_field) then
+    Resut := ARecordSet;
+  else
+    Result := ARecordSet;
 end;
 
 function TChoiceRefObjForm.GetSortField(ASortColumn: String): String;
@@ -321,6 +336,169 @@ end;
 
 function TChoiceRefObjForm.GetSortFieldIdx(ASortColumn: String): Integer;
 begin
+  if strfunc.IsStartsWith(ASortColumn, SORT_REVERSE_SIGN) then
+  	Result := Copy(ASortColumn, 1, Length(ASortColumn) - 1)
+  else
+    Result := ASortColumn;
+
+  Result := strfunc.GetIdxStrInList(ASortColumn, FRefObjColNames);
+end;
+
+function TChoiceRefObjForm.IsReverseSort(ASortColumn: String): Boolean;
+begin
+  Result := strfunc.IsStartsWith(ASortColumn, SORT_REVERSE_SIGN);
+end;
+
+function TChoiceRefObjForm.IsReverseSort(ASortColumn: Integer): Boolean;
+begin
+  Result := ASortColumn < 0;
+end;
+
+procedure TChoiceRefObjForm.RefreshRefObjTree(ASortColumn: Array of string);
+var
+  selected_code, title: String;
+begin
+  selected_code := GetSelectedCode();
+  { Сначала удаляем все элементы дерева }
+  RefObjTreeListView.Items.Clear;
+
+  if (FRefObj is not nil) and (not strfunc.IsEmpty(FRefObj.Description)) then
+    title := FRefObj.Description
+  else
+    title := FRefObj.Name;
+
+  RefObjTreeListView.BeginUpdate;
+  { Добавляем корневой элемент дерева }
+  TreeListView1.Items.Add.Text := title;
+
+  if (FRefObj is not nil) or (FRefObj.IsEmpty()) then
+    logfunc.WarningMsgFmt('Справочник <%s> пустой', [FRefObj.Name])
+  else
+  begin
+    //if Length(ASortColumn) = 0 then
+    //  sort_column = FSortColumn;
+    SetRefObjLevelTree();
+	end;
+
+  RefObjTreeListView.EndUpdate;
+
+  if strfunc.IsEmpty(selected_code) then
+    SelectRefObjTreeItem(selected_code)
+  else
+    { Распахнуть корневой элемент }
+    FRefObjTreeListView.Expand();
+
+end;
+
+procedure TChoiceRefObjForm.SetRefObjTreeItem(AParentItem: TTreeListViewItem; ARecordSet: TDataSet);
+var
+  code, field_name, value: String;
+  is_activate: Boolean;
+  i: Integer;
+  item: TTreeListViewItem;
+begin
+  code := ARecordSet.FieldByName[FRefObj.CodColumnName].AsString;
+  is_activate := ARecordSet.FieldByName[FRefObj.ActivateColumnName].AsBoolean;
+
+  if is_activate then
+  begin
+    item := AParentItem.SubItems.Add(code);
+    { Здесь надо привязать запись к элементу справочника}
+    item.Data := ARecordSet.RecNo;
+    { Заполнение колонок }
+    for i := 1 to Length(FRefObjColNames) - 1 do
+    begin
+      field_name := FRefObjColNames[i];
+      value := ARecordSet.FieldByName[field_name].AsString;
+      AParentItem.RecordItems.Add.Text := value;
+    end;
+  end;
+end;
+
+function TChoiceRefObjForm.FindTreeChildItem(AItemText: AnsiString; ACurItem: TTreeListViewItem): TTreeListViewItem;
+var
+  i: Integer;
+  child_item: TTreeListViewItem;
+begin
+  if ACurItem is nil then
+    ACurItem := FRefObjTreeListView.Items[0];
+
+  Result := nil;
+	for i := 0 to ACurItem.SubItems.Count - 1 do
+  begin
+  	child_item := ACurItem.SubItems[i];
+    if child_item.GetText() = AItemText then
+    begin
+      Result := child_item;
+      break;
+    end;
+  end;
+end;
+
+procedure TChoiceRefObjForm.InitLevelTree(AItem: TTreeListViewItem; ARecordSet: TDataSet);
+var
+  find_item: TTreeListViewItem;
+  code: String;
+begin
+  find_item := FindTreeChildItem(TREE_ITEM_LABEL, AItem);
+
+  if find_item is not nil then
+    FRefObjTreeListView.RemoveSelection();
+
+  if AItem.SubItems.Count = 0 then
+  begin
+    { Получить запись }
+    ARecordSet.MoveBy(AItem.Data);
+    { Получить код }
+    code := ARecordSet.FieldByName[FRefObj.CodColumnName];
+    SetRefObjLevelTree(AItem, code);
+  end;
+end;
+
+function TChoiceRefObjForm.FindRefObjTreeItem(AParentItem: TTreeListViewItem; ACode: String; ARecordSet: TDataSet): TTreeListViewItem;
+var
+  find_result, child_item: TTreeListViewItem;
+  i: Integer;
+begin
+  { Поиск в текущем элементе }
+  { Получить запись }
+  ARecordSet.MoveBy(AParentItem.Data);
+  if ARecordSet.FieldByName[FRefObj.CodColumnName] = ACode then
+  begin
+    Result := AParentItem;
+    Exit;
+  end;
+
+  { Поиск в дочерних элементах }
+  find_result := nil;
+  for i := 0 to AParentItem.SubItems.Count - 1 do
+  begin
+    child_item := AParentItem.SubItems[i];
+    ARecordSet.MoveBy(child_item.Data);
+    if ARecordSet.FieldByName[FRefObj.CodColumnName] = ACode then
+    begin
+      find_result := child_item;
+      break;
+    end;
+  end;
+
+  { На этом уровне не нашли, необходимо искать уровнями ниже }
+  if find_result is nil then
+  begin
+    for i := 0 to AParentItem.SubItems.Count - 1 do
+    begin
+      child_item := AParentItem.SubItems[i];
+      InitLevelTree(child_item, ARecordSet);
+      find_result := FindRefObjTreeItem(child_item, ACode, ARecordSet);
+      if find_result is not nil then
+        break;
+    end;
+  end;
+
+  if find_result is not il then
+    find_result.Expand;
+
+  Result := find_result;
 end;
 
 end.
