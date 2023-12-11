@@ -38,6 +38,14 @@ type
     { Имена полей поиска }
     FRefObjSearchColNames: Array of string;
 
+    { Найденные коды }
+    FSearchCodes: Array of string;
+    FSearchCodeIdx: Integer;
+    FNotActualSearch: Boolean;
+
+    { Колонка сортировки }
+
+    FSortColumn: String;
     { Инициализация изображений, если необходимо }
     procedure InitImages();
     { Инициализация колонок по описанию полей }
@@ -76,21 +84,23 @@ type
     { Поиск элемента дерева по коду }
     function FindRefObjTreeItem(AParentItem: TTreeListViewItem; ACode: String; ARecordSet: TDataSet): TTreeListViewItem;
     { Найти и выделить элемент дерева по коду }
-    function SelectRefObjTreeItem();
+    function SelectRefObjTreeItem(AParentItem: TTreeListViewItem; ACode: String; ARecordSet: TDataSet): TTreeListViewItem;
     { Получить выбранный код }
-    function GetSelectedCode();
+    function GetSelectedCode(ARecordSet: TDataSet): String;
     { Открыть форму редактирования справочника }
-    function EditRefObj();
+    function EditRefObj(): Boolean;
     { Определите имя выбранного поля, по которому мы будем выполнять поиск }
     function GetSearchFieldName();
     { }
-    function ClearSearch();
+    procedure ClearSearch();
+    { Наименование поля поиска }
+    function GetSearchFieldName(): String;
     { Обновите найденные коды, соответствующие параметрам поиска }
-    function GetSearchCodes();
+    function GetSearchCodes(ASearchTxt: String; ASearchFieldName: String; ARecordSet: TDataSet): Array of String;
     { Обновите найденные коды, соответствующие параметрам поиска.Определите индекс выбранного столбца }
-    function GetSelectedColIdx();
+    //function GetSelectedColIdx();
     { Обновить сортировку по колонке }
-    function RefreshSortColumn();
+    //function RefreshSortColumn();
 
   end;
 
@@ -499,6 +509,103 @@ begin
     find_result.Expand;
 
   Result := find_result;
+end;
+
+function TChoiceRefObjForm.SelectRefObjTreeItem(AParentItem: TTreeListViewItem; ACode: String; ARecordSet: TDataSet): TTreeListViewItem;
+begin
+  if AParentItem is nil then
+    AParentItem := FRefObjTreeListView.Items[0];
+
+  Result := FindRefObjTreeListView(AParentItem, ACode, ARecordSet);
+  if Result isnot nil then
+  begin
+    FRefObjTreeListView.DoSelect(Result);
+    Exit;
+  end;
+  Result := nil;
+end;
+
+function TChoiceRefObjForm.GetSelectedCode(ARecordSet: TDataSet): String;
+var
+  item: TTreeListViewItem;
+begin
+  item := FRefObjTreeListView.Selected;
+  if item is not nil then
+  begin
+    { Получить запись }
+    ARecordSet.MoveBy(item.Data);
+    Result := ARecordSet.FieldByName[FRefObj.CodColumnName];
+    Exit;
+  end;
+  Result := '';
+end;
+
+function TChoiceRefObjForm.EditRefObj(): Boolean;
+begin
+  Result := True;
+end;
+
+procedure TChoiceRefObjForm.ClearSearch();
+begin
+  SetLength(FSearchCodes, 0);
+  FSearchCodeIdx := 0;
+  FNotActualSearch := False;
+
+  FRefObjTreeListView.DoSelect(FRefObjTreeListView.Items[0]);
+  FindEdit.Text := '';
+end;
+
+function TChoiceRefObjForm.GetSearchFieldName(): String;
+var
+  idx: Integer;
+begin
+  idx := SearchFieldComboBox.ItemIndex;
+  if (idx > = 0) and (idx < SearchFieldComboBox.Items.Count) then
+    Result := FRefObjSearchColNames[idx]
+  else
+    Result := FRefObj.NameColumnName;
+end;
+
+function TChoiceRefObjForm.GetSearchCodes(ASearchTxt: String; ASearchFieldName: String; ARecordSet: TDataSet): Array of String;
+var
+  is_reverse: Boolean;
+  order_by: Array of string;
+  sort_field, fld: String;
+  i: Integer;
+begin
+  if strfunc.IsEmpty(ASearchFieldName) then
+    ASearchFieldName := GetSearchFieldName();
+
+  is_reverse := False;
+  if not strfunc.IsEmpty(FSortColumn) then
+  begin
+    sort_field := GetSortField(FSortColumn);
+    is_reverse := IsReverseSort(FSortColumn);
+    SetLength(order_by, Length(FRefObjColNames) + 1);
+    order_by[0] := sort_field;
+    for i := 1 to Length(FRefObjColNames) do
+    begin
+      fld := FRefObjColNames[i - 1];
+      if (fld <> FRefObj.CodColumnName) and (fld <> sort_field) then
+        order_by[i] := fld
+      else
+        order_by[i] := '';
+    end;
+  end;
+
+  try
+    Result := FRefObj.SearchCodesByColValue(ASearchTxt, ASearchFieldName);
+                                            //order_by, is_reverse);
+  except
+    //logfunc.Fatal
+    Result := [];
+  end;
+
+  if Length(Result) > 0 then
+  begin
+    FSearchCodes := Result;
+    FSearchCideIdx := 0;
+  end;
 end;
 
 end.
