@@ -10,7 +10,7 @@
       </SearchPaths>
     </CompilerOptions>
     <Version Release="1" Build="1"/>
-    <Files Count="8">
+    <Files Count="9">
       <Item1>
         <Filename Value="icsdfdataset.pas"/>
         <HasRegisterProc Value="True"/>
@@ -49,6 +49,11 @@
         <Filename Value="choice_ref_obj_form.pas"/>
         <UnitName Value="choice_ref_obj_form"/>
       </Item8>
+      <Item9>
+        <Filename Value="icrefobjchoiceeditbutton.pas"/>
+        <HasRegisterProc Value="True"/>
+        <UnitName Value="icrefobjchoiceeditbutton"/>
+      </Item9>
     </Files>
     <CompatibilityMode Value="True"/>
     <RequiredPkgs Count="4">

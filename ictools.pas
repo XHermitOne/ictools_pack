@@ -10,7 +10,7 @@ interface
 uses
   ICSdfDataset, ICXMLConfig, ICAnalogGauge, ICLogComboBoxEx, ICLogImageList, 
   edit_xml_config_form, ICRefObjDataSource, choice_ref_obj_form, 
-  LazarusPackageIntf;
+  icrefobjchoiceeditbutton, LazarusPackageIntf;
 
 implementation
 
@@ -22,6 +22,7 @@ begin
   RegisterUnit('ICLogComboBoxEx', @ICLogComboBoxEx.Register);
   RegisterUnit('ICLogImageList', @ICLogImageList.Register);
   RegisterUnit('ICRefObjDataSource', @ICRefObjDataSource.Register);
+  RegisterUnit('icrefobjchoiceeditbutton', @icrefobjchoiceeditbutton.Register);
 end;
 
 initialization
