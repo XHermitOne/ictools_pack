@@ -6,6 +6,7 @@ object ChoiceRefObjForm: TChoiceRefObjForm
   Caption = 'ChoiceRefObjForm'
   ClientHeight = 499
   ClientWidth = 868
+  LCLVersion = '2.2.6.0'
   object SearchFieldComboBox: TComboBox
     AnchorSideLeft.Control = Owner
     AnchorSideTop.Control = Owner

@@ -55,6 +55,8 @@ type
     procedure InitSearch(ASearchFields: TArrayOfString);
     { Определить надпись по имени поля }
     function GetFieldLabel(AFieldDef: TFieldDef): AnsiString;
+    { Определить ширину колонки по имени поля }
+    function GetColumnWidth(AFieldDef: TFieldDef): Integer;
     { Обновить уровень дерева справочника }
     procedure SetRefObjLevelTree(AParentItem: TTreeListItem; ACod: String; ASortColumn: String);
     { Определите имя поля сортировки, указав имя/ индекс столбца сортировки }
@@ -102,6 +104,8 @@ type
     //function RefreshSortColumn();
 
   end;
+
+function ChoiceRefObjCodDialogForm(ARefObj: TICRefObjDataSource; ADefaultCod: String; AFields: TArrayOfString): String;
 
 var
   ChoiceRefObjForm: TChoiceRefObjForm;
@@ -151,7 +155,6 @@ var
   field_names: TArrayOfString;
   field_name: String;
   field_def: TFieldDef;
-  column_label: AnsiString;
   i: Integer;
 begin
   if FRefObj <> nil then
@@ -180,9 +183,11 @@ begin
   begin
     field_name := FRefObjColNames[i];
     field_def := FRefObj.DataSet.FieldDefs.Find(field_name);
-    column_label := GetFieldLabel(field_def);
-    RefObjTreeListView.Columns.Add.Text := column_label;
-    RefObjTreeListView.Columns.Add.Width := 100;
+    with RefObjTreeListView.Columns.Add do
+    begin
+      Text := GetFieldLabel(field_def);
+      Width := GetColumnWidth(field_def);
+    end;
   end;
 end;
 
@@ -229,7 +234,22 @@ function TChoiceRefObjForm.GetFieldLabel(AFieldDef: TFieldDef): AnsiString;
 begin
   Result := '';
   if AFieldDef <> nil then
-    Result := AFieldDef.DisplayName;
+    if AFieldDef.DisplayName = 'cod' then
+      Result := 'Код'
+    else if AFieldDef.DisplayName = 'name' then
+      Result := 'Наименование'
+    else
+      Result := AFieldDef.DisplayName;
+end;
+
+function TChoiceRefObjForm.GetColumnWidth(AFieldDef: TFieldDef): Integer;
+begin
+  Result := 200;
+  if AFieldDef <> nil then
+    if AFieldDef.DisplayName = 'cod' then
+      Result := 100
+    else if AFieldDef.DisplayName = 'name' then
+      Result := 500
 end;
 
 procedure TChoiceRefObjForm.SetRefObjTree(ASortColumn: String);
@@ -245,8 +265,8 @@ begin
   { Добавляем корневой элемент дерева }
   RefObjTreeListView.Items.Add.Text := title;
 
-  if (FRefObj <> nil) or (FRefObj.IsEmpty()) then
-    logfunc.WarningMsgFmt('Справочник <%s> пустой', [FRefObj.Name])
+  if (FRefObj = nil) or FRefObj.IsEmpty() then
+    logfunc.WarningMsgFmt('Справочник <%s> пустой', [FRefObj.Name], True)
   else
   begin
     if strfunc.IsEmptyStr(ASortColumn) then
@@ -266,7 +286,7 @@ var
 begin
   if FRefObj = nil then
   begin
-    logfunc.WarningMsg('Не определен справочник для выбора кода');
+    logfunc.WarningMsg('Не определен справочник для выбора кода', True);
     Exit;
   end;
 
@@ -276,7 +296,7 @@ begin
       level_data := SortRefObjRecordset(level_data, ASortColumn);
   if level_data.IsEmpty() then
   begin
-    logfunc.WarningMsg('Нет данных');
+    logfunc.WarningMsg('Нет данных', True);
     Exit;
   end;
 
@@ -607,6 +627,20 @@ begin
   begin
     FSearchCodes := Result;
     //FSearchCideIdx := 0;
+  end;
+end;
+
+function ChoiceRefObjCodDialogForm(ARefObj: TICRefObjDataSource; ADefaultCod: String; AFields: TArrayOfString): String;
+var
+  dlg: TChoiceRefObjForm;
+begin
+  dlg := TChoiceRefObjForm.Create(Application);
+  try
+    dlg.SetRefObj(ARefObj);
+    dlg.Init(AFields);
+    dlg.ShowModal();
+  finally
+    dlg.Free;
   end;
 end;
 

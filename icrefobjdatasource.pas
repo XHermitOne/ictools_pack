@@ -2,7 +2,7 @@
 Модуль компонента работы с набором записей как с иерархическим справочником.
 Иерархия организуется при помощи много уровневого кода.
 
-Версия: 0.0.0.1
+Версия: 0.0.1.1
 }
 unit ICRefObjDataSource;
 
@@ -29,9 +29,9 @@ type
     { Описание справочника }
     FDEscription: AnsiString;
     { Длины кодов уровней }
-    FCodLen: TStringList;
+    FCodLen: TStrings;
     { Наименонивание уровней }
-    FLevelLabels: TStringList;
+    FLevelLabels: TStrings;
     { Флаг разрешения редактирования справочника }
     FCanEdit: Boolean;
 
@@ -45,8 +45,15 @@ type
     { Наименование таблицы }
     FTableName: String;
   protected
+    procedure SetCodLen(AValues: TStrings); virtual;
+    procedure SetLevelLabels(AValues: TStrings); virtual;
 
   public
+    // Create
+    constructor Create(AOwner:TComponent); override;
+    // Destroy
+    destructor Destroy; override;
+
     { Получить объект записи по коду }
     function GetRecByCod(ACod: String): TDataSet;
     { Получить объект записи по значению колонки }
@@ -127,8 +134,8 @@ type
 
     property TableName: String read FTableName write FTableName;
 
-    property CodLen: TStringList read FCodLen write FCodLen;
-    property LevelLabels: TStringList read FLevelLabels write FLevelLabels;
+    property CodLen: TStrings read FCodLen write SetCodLen;
+    property LevelLabels: TStrings read FLevelLabels write SetLevelLabels;
     property CanEdit: Boolean read FCanEdit write FCanEdit;
 
   end;
@@ -137,10 +144,54 @@ procedure Register;
 
 implementation
 
+uses
+  choice_ref_obj_form;
+
 procedure Register;
 begin
   {$I icrefobjdatasource_icon.lrs}
   RegisterComponents('IC Tools',[TICRefObjDataSource]);
+end;
+
+constructor TICRefObjDataSource.Create(AOwner:TComponent);
+begin
+  inherited;
+
+  FCodColumnName := 'cod';
+  FNameColumnName := 'name';
+  FActiveColumnName := 'activate';
+
+  FCodLen := TStringList.Create;
+  FLevelLabels := TStringList.Create;
+end;
+
+// Destroy
+destructor TICRefObjDataSource.Destroy;
+begin
+  FreeAndNil(FLevelLabels);
+  FreeAndNil(FCodLen);
+
+  inherited;
+end;
+
+procedure TICRefObjDataSource.SetCodLen(AValues: TStrings);
+begin
+  if (AValues <> FCodLen) then
+  begin
+    //LockSelectionChange;
+    FCodLen.Assign(AValues);
+    //UnlockSelectionChange;
+  end;
+end;
+
+procedure TICRefObjDataSource.SetLevelLabels(AValues: TStrings);
+begin
+  if (AValues <> FLevelLabels) then
+  begin
+    //LockSelectionChange;
+    FLevelLabels.Assign(AValues);
+    //UnlockSelectionChange;
+  end;
 end;
 
 { Получить объект записи по коду }
@@ -380,8 +431,12 @@ end;
 { Пустой справочник? }
 function TICRefObjDataSource.IsEmpty(): Boolean;
 begin
-  if DataSet <> Nil then
-    Result := DataSet.IsEmpty
+  if DataSet <> nil then
+  begin
+    DataSet.Open;
+    Result := DataSet.IsEmpty;
+    DataSet.Close;
+  end
   else
     Result := True;
 end;
@@ -389,13 +444,13 @@ end;
 { В справочнике присутствует код? }
 function TICRefObjDataSource.HasCod(ACod: String): Boolean;
 begin
-  Result := GetRecByCod(ACod) <> Nil;
+  Result := GetRecByCod(ACod) <> nil;
 end;
 
 { В справочнике присутствует наименование? }
 function TICRefObjDataSource.HasName(AName: AnsiString): Boolean;
 begin
-  Result := GetRecByColValue(NameColumnName, AName) <> Nil;
+  Result := GetRecByColValue(NameColumnName, AName) <> nil;
 end;
 
 { Элемент справочника с кодом активен? }
@@ -439,20 +494,34 @@ end;
 { Получить список записей уровня по коду }
 function TICRefObjDataSource.GetLevelRecsByCod(ACod: String): TDataSet;
 var
-  search_query: TSQLQuery;
+  search_query: TSQlQuery;
+  cod_len, level_idx: Integer;
 begin
   // search_query.
+  search_query := TSQLQuery(DataSet);
   search_query.Close;
 
-  search_query.Active := False;
-  search_query.SQL.Text := 'SELECT * FROM :table_name WHERE (:column_name LIKE '':cod_value%%'' AND :column_name <> '':cod_value'')';
-  search_query.Active := True;
+  //search_query.Active := False;
+  if strfunc.IsEmptyStr(ACod) then
+  begin
+    cod_len := StrToInt(FCodLen.Strings[0]);
+    search_query.SQL.Text := 'SELECT * FROM :table_name WHERE LENGTH(:column_name) = :cod_len';
+  end
+  else
+  begin
+    level_idx := GetLevelIdxByCod(ACod);
+    cod_len := mathfunc.SumRangeAsInteger(FCodLen, 0, level_idx);
+    search_query.SQL.Text := 'SELECT * FROM :table_name WHERE (LENGTH(:column_name) = :cod_len AND :column_name LIKE '':cod_value%%'')';
 
-  if not search_query.Prepared then
-    search_query.Prepare;
-  search_query.ParamByName('table_name').Value := TableName;
-  search_query.ParamByName('column_name').Value := CodColumnName;
-  search_query.ParamByName('cod_value').Value := ACod;
+    search_query.ParamByName('cod_value').AsString := ACod;
+  end;
+  //search_query.Active := True;
+
+  //if not search_query.Prepared then
+  //  search_query.Prepare;
+  search_query.ParamByName('table_name').AsString := TableName;
+  search_query.ParamByName('column_name').AsString := CodColumnName;
+  search_query.ParamByName('cod_len').AsInteger := cod_len;
   search_query.Open;
 
   Result := search_query;
@@ -540,7 +609,7 @@ end;
 { Запустить процедуру выбора кода из справочника }
 function TICRefObjDataSource.ChoiceCod(): String;
 begin
-  Result := '';
+  Result := choice_ref_obj_form.ChoiceRefObjCodDialogForm(self, '', []);
 end;
 
 
