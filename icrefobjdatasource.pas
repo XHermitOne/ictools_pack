@@ -17,6 +17,7 @@ uses
 
 const
   { Имена колонок по умолчанию }
+  DEFAULT_ID_COLUMN_NAME = 'id';
   DEFAULT_COD_COLUMN_NAME = 'cod';
   DEFAULT_NAME_COLUMN_NAME = 'name';
   DEFAULT_ACTIVE_COLUMN_NAME = 'activate';
@@ -35,6 +36,8 @@ type
     { Флаг разрешения редактирования справочника }
     FCanEdit: Boolean;
 
+    { Имя колонки идентификатора }
+    FIdColumnName: String;
     { Имя колонки кода }
     FCodColumnName: String;
     { Имя колонки наименования }
@@ -102,7 +105,9 @@ type
     { Количество уровней }
     function GetLevelCount(): Integer;
     { Получить список записей уровня по коду }
-    function GetLevelRecsByCod(ACod: String): TDataSet;
+    function GetLevelRecsByCod(ACod: String; ARecordSet: TDataSet): TDataSet;
+    { Получить все активные записи справочника }
+    function GetAllActiveRecs(): TDataSet;
     { Есть подкоды? }
     function HasChildrenCodes(AParentCod: String): Boolean;
     { Получить список дочерних кодов }
@@ -128,6 +133,7 @@ type
 
   published
     property Description: AnsiString read FDescription write FDescription;
+    property IdColumnName: String read FIdColumnName write FIdColumnName;
     property CodColumnName: String read FCodColumnName write FCodColumnName;
     property NameColumnName: String read FNameColumnName write FNameColumnName;
     property ActiveColumnName: String read FActiveColumnName write FActiveColumnName;
@@ -157,6 +163,7 @@ constructor TICRefObjDataSource.Create(AOwner:TComponent);
 begin
   inherited;
 
+  FIdColumnName := 'id';
   FCodColumnName := 'cod';
   FNameColumnName := 'name';
   FActiveColumnName := 'activate';
@@ -430,12 +437,14 @@ end;
 
 { Пустой справочник? }
 function TICRefObjDataSource.IsEmpty(): Boolean;
+var
+  sql_query: TSQlQuery;
 begin
-  if DataSet <> nil then
+  sql_query := TSQLQuery(GetAllActiveRecs());
+  if sql_query <> nil then
   begin
-    DataSet.Open;
-    Result := DataSet.IsEmpty;
-    DataSet.Close;
+    Result := sql_query.IsEmpty;
+    sql_query.Close;
   end
   else
     Result := True;
@@ -492,67 +501,97 @@ begin
 end;
 
 { Получить список записей уровня по коду }
-function TICRefObjDataSource.GetLevelRecsByCod(ACod: String): TDataSet;
+function TICRefObjDataSource.GetLevelRecsByCod(ACod: String; ARecordSet: TDataSet): TDataSet;
 var
   search_query: TSQlQuery;
-  cod_len, level_idx: Integer;
+  cod_len, next_level_idx: Integer;
 begin
-  // search_query.
-  search_query := TSQLQuery(DataSet);
-  search_query.Close;
-
-  //search_query.Active := False;
-  if strfunc.IsEmptyStr(ACod) then
-  begin
-    cod_len := StrToInt(FCodLen.Strings[0]);
-    search_query.SQL.Text := 'SELECT * FROM :table_name WHERE LENGTH(:column_name) = :cod_len';
-  end
+  if ARecordSet = nil then
+    search_query := TSQLQuery.Create(Application)
   else
-  begin
-    level_idx := GetLevelIdxByCod(ACod);
-    cod_len := mathfunc.SumRangeAsInteger(FCodLen, 0, level_idx);
-    search_query.SQL.Text := 'SELECT * FROM :table_name WHERE (LENGTH(:column_name) = :cod_len AND :column_name LIKE '':cod_value%%'')';
+    search_query := TSQLQuery(ARecordSet);
+  search_query.DataBase := TSQLQuery(DataSet).DataBase;
 
-    search_query.ParamByName('cod_value').AsString := ACod;
+  try
+    // search_query.
+    search_query.Close;
+
+    //search_query.Active := False;
+    search_query.SQL.Clear;
+    if strfunc.IsEmptyStr(ACod) then
+    begin
+      cod_len := StrToInt(FCodLen.Strings[0]);
+      search_query.SQL.Text := Format('SELECT * FROM %s WHERE LENGTH(%s) = %d AND activate = 1', [TableName, CodColumnName, cod_len]);
+    end
+    else
+    begin
+      next_level_idx := GetLevelIdxByCod(ACod) + 1;
+      if next_level_idx >= FCodLen.Count then
+      begin
+        Result := search_query;
+        Exit;
+      end;
+      cod_len := mathfunc.SumRangeAsInteger(FCodLen, 0, next_level_idx + 1);
+      search_query.SQL.Text := Format('SELECT * FROM %s WHERE LENGTH(%s) = %d AND %s LIKE ''%s%%'' AND activate = 1', [TableName, CodColumnName, cod_len, CodColumnName, ACod]);
+
+    end;
+    logfunc.DebugMsgFmt('SQL: %s', [search_query.SQL.Text], True);
+    //search_query.Active := True;
+
+    //if not search_query.Prepared then
+    //  search_query.Prepare;
+    search_query.Open;
+  except
+    logfunc.FatalMsg('Ошибка БД', True);
   end;
-  //search_query.Active := True;
-
-  //if not search_query.Prepared then
-  //  search_query.Prepare;
-  search_query.ParamByName('table_name').AsString := TableName;
-  search_query.ParamByName('column_name').AsString := CodColumnName;
-  search_query.ParamByName('cod_len').AsInteger := cod_len;
-  search_query.Open;
 
   Result := search_query;
+end;
+
+function TICRefObjDataSource.GetAllActiveRecs(): TDataSet;
+var
+  sql_query: TSQlQuery;
+begin
+  sql_query := TSQLQuery(DataSet);
+  if sql_query <> nil then
+  begin
+    sql_query.Close;
+    sql_query.SQL.Text := Format('SELECT * FROM %s WHERE %s = 1', [TableName, ActiveColumnName]);
+    sql_query.Open;
+  end;
+  Result := sql_query;
 end;
 
 { Есть подкоды? }
 function TICRefObjDataSource.HasChildrenCodes(AParentCod: String): Boolean;
 var
-  data_set: TDataSet;
+  sql_query: TSQLQuery;
 begin
-  data_set := GetLevelRecsByCod(APArentCod);
-  Result := not data_set.IsEmpty;
-  data_set.Destroy();
+  sql_query := TSQLQuery.Create(Application);
+  sql_query := TSQLQuery(GetLevelRecsByCod(AParentCod, sql_query));
+  Result := not sql_query.IsEmpty();
+  sql_query.Close();
+  FreeAndNil(sql_query);
 end;
 
 { Получить список дочерних кодов }
 function TICRefObjDataSource.GetChildrenCodes(AParentCod: String): TStringList;
 var
-  data_set: TDataSet;
+  sql_query: TSQLQuery;
   cod: String;
 begin
   Result := TStringList.Create();
-  data_set := GetLevelRecsByCod(APArentCod);
 
-  data_set.First;
-  while not data_set.EOF do
+  sql_query := TSQlQuery.Create(Application);
+  sql_query := TSQLQuery(GetLevelRecsByCod(APArentCod, sql_query));
+
+  sql_query.First;
+  while not sql_query.EOF do
   begin
-    cod := data_set.FieldValues[CodColumnName].AsString;
+    cod := sql_query.FieldValues[CodColumnName].AsString;
     Result.Add(cod);
   end;
-  data_set.Destroy();
+  FreeAndNil(sql_query);
 end;
 
 { Получить индекс уровня по коду }

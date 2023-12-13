@@ -11,7 +11,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, Buttons,
-  TreeListView, db,
+  TreeListView, findControl, db,
   exttypes, ICRefObjDataSource;
 
 const
@@ -26,10 +26,6 @@ type
     OkBitBtn: TBitBtn;
     CancelBitBtn: TBitBtn;
     EditBitBtn: TBitBtn;
-    SearchFieldComboBox: TComboBox;
-    FindEdit: TEdit;
-    Label1: TLabel;
-    FindSpeedButton: TSpeedButton;
     RefObjTreeListView: TTreeListView;
   protected
     FRefObj: TICRefObjDataSource;
@@ -146,8 +142,25 @@ begin
   InitImages();
 
   InitColumns(AFields);
-  InitSearch(AFields);
+  //InitSearch(AFields);
+
+  RefObjTreeListView.CreateSearchBar();
+  with RefObjTreeListView.SearchBar do
+  begin
+    Parent := self;
+    Align := alTop;
+    Caption := 'Найти:';
+    HighlightText := 'Выделить все';
+    SearchBackwardText := 'Предыдущий';
+    SearchForwardText := 'Следующий';
+    SubComponents := [fscCaption, fscSelectLocation,
+                      fscSearchForward, fscSearchBackwards, fscHighlight, fscStatus];
+    SearchLocations.Strings[0] := 'Все';
+  end;
+  //RefObjTreeListView.UpdateScrollBarPos;
+
   SetRefObjTree('');
+  RefObjTreeListView.ColumnsAutoSize();
 end;
 
 procedure TChoiceRefObjForm.InitColumns(AFields: TArrayOfString);
@@ -220,14 +233,14 @@ begin
     Exit;
   end;
 
-  SearchFieldComboBox.Items.Clear;
-  for i := 0 to Length(FRefObjSearchColNames) - 1 do
-  begin
-    field_name := FRefObjColNames[i];
-    field_def := FRefObj.DataSet.FieldDefs.Find(field_name);
-    column_label := GetFieldLabel(field_def);
-    SearchFieldComboBox.Items.Add(column_label);
-  end;
+  //SearchFieldComboBox.Items.Clear;
+  //for i := 0 to Length(FRefObjSearchColNames) - 1 do
+  //begin
+  //  field_name := FRefObjColNames[i];
+  //  field_def := FRefObj.DataSet.FieldDefs.Find(field_name);
+  //  column_label := GetFieldLabel(field_def);
+  //  SearchFieldComboBox.Items.Add(column_label);
+  //end;
 end;
 
 function TChoiceRefObjForm.GetFieldLabel(AFieldDef: TFieldDef): AnsiString;
@@ -290,9 +303,9 @@ begin
     Exit;
   end;
 
-  level_data := FRefObj.GetLevelRecsByCod(ACod);
+  level_data := FRefObj.GetLevelRecsByCod(ACod, nil);
   { Сортировка, если определены колонки сортировки }
-  if strfunc.IsEmptyStr(ASortColumn) then
+  if not strfunc.IsEmptyStr(ASortColumn) then
       level_data := SortRefObjRecordset(level_data, ASortColumn);
   if level_data.IsEmpty() then
   begin
@@ -306,10 +319,10 @@ begin
     level_data.First;
     while not level_data.EOF do
     begin
-
       SetRefObjTreeItem(AParentItem, level_data);
       level_data.Next;
     end;
+    FreeAndNil(level_data);
     { Установить автоматически ширины колонок }
   except
     logfunc.FatalMsgFmt('Ошибка построения дерева справочника <%s>', [FRefObj.Name]);
@@ -433,13 +446,17 @@ begin
   begin
     item := AParentItem.SubItems.Add(code);
     { Здесь надо привязать запись к элементу справочника}
-    item.Data.i64 := ARecordSet.RecNo;
+    item.Data.i64 := ARecordSet.FieldByName(FRefObj.IdColumnName).AsInteger;
     { Заполнение колонок }
     for i := 1 to Length(FRefObjColNames) - 1 do
     begin
       field_name := FRefObjColNames[i];
       value := ARecordSet.FieldByName(field_name).AsString;
-      AParentItem.RecordItems.Add.Text := value;
+      item.RecordItems.Add.Text := value;
+    end;
+    if FRefObj.HasChildrenCodes(code) then
+    begin
+      SetRefObjLevelTree(item, code, FSortColumn);
     end;
   end;
 end;
@@ -477,7 +494,8 @@ begin
   if AItem.SubItems.Count = 0 then
   begin
     { Получить запись }
-    ARecordSet.MoveBy(AItem.Data.i64);
+    // ARecordSet.MoveBy(AItem.Data.i64);
+    ARecordSet.Locate(FRefObj.IdColumnName, AItem.Data.i64, []);
     { Получить код }
     code := ARecordSet.FieldByName(FRefObj.CodColumnName).AsString;
     SetRefObjLevelTree(AItem, code, '');
@@ -491,7 +509,7 @@ var
 begin
   { Поиск в текущем элементе }
   { Получить запись }
-  ARecordSet.MoveBy(AParentItem.Data.i64);
+  ARecordSet.Locate(FRefObj.IdColumnName, AParentItem.Data.i64, []);
   if ARecordSet.FieldByName(FRefObj.CodColumnName).AsString = ACode then
   begin
     Result := AParentItem;
@@ -503,7 +521,8 @@ begin
   for i := 0 to AParentItem.SubItems.Count - 1 do
   begin
     child_item := AParentItem.SubItems[i];
-    ARecordSet.MoveBy(child_item.Data.i64);
+    //ARecordSet.MoveBy(child_item.Data.i64);
+    ARecordSet.Locate(FRefObj.IdColumnName, child_item.Data.i64, []);
     if ARecordSet.FieldByName(FRefObj.CodColumnName).AsString = ACode then
     begin
       find_result := child_item;
@@ -552,7 +571,8 @@ begin
   if item <> nil then
   begin
     { Получить запись }
-    ARecordSet.MoveBy(item.Data.i64);
+    //ARecordSet.MoveBy(item.Data.i64);
+    ARecordSet.Locate(FRefObj.IdColumnName, item.Data.i64, []);
     Result := ARecordSet.FieldByName(FRefObj.CodColumnName).AsString;
     Exit;
   end;
@@ -571,17 +591,17 @@ begin
   FNotActualSearch := False;
 
   RefObjTreeListView.Selected := RefObjTreeListView.Items[0];
-  FindEdit.Text := '';
+  // FindEdit.Text := '';
 end;
 
 function TChoiceRefObjForm.GetSearchFieldName(): String;
-var
-  idx: Integer;
+//var
+//  idx: Integer;
 begin
-  idx := SearchFieldComboBox.ItemIndex;
-  if (idx >= 0) and (idx < SearchFieldComboBox.Items.Count) then
-    Result := FRefObjSearchColNames[idx]
-  else
+  //idx := SearchFieldComboBox.ItemIndex;
+  //if (idx >= 0) and (idx < SearchFieldComboBox.Items.Count) then
+  //  Result := FRefObjSearchColNames[idx]
+  //else
     Result := FRefObj.NameColumnName;
 end;
 

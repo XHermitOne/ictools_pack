@@ -1,109 +1,21 @@
 object ChoiceRefObjForm: TChoiceRefObjForm
   Left = 366
-  Height = 499
+  Height = 526
   Top = 239
-  Width = 868
+  Width = 845
   Caption = 'ChoiceRefObjForm'
-  ClientHeight = 499
-  ClientWidth = 868
-  LCLVersion = '2.2.6.0'
-  object SearchFieldComboBox: TComboBox
-    AnchorSideLeft.Control = Owner
-    AnchorSideTop.Control = Owner
-    Left = 5
-    Height = 34
-    Top = 5
-    Width = 401
-    BorderSpacing.Around = 5
-    ItemHeight = 0
-    TabOrder = 0
-  end
-  object Label1: TLabel
-    AnchorSideLeft.Control = SearchFieldComboBox
-    AnchorSideLeft.Side = asrBottom
-    AnchorSideTop.Control = SearchFieldComboBox
-    AnchorSideTop.Side = asrCenter
-    Left = 411
-    Height = 17
-    Top = 14
-    Width = 47
-    BorderSpacing.Around = 5
-    Caption = 'Найти:'
-    ParentColor = False
-  end
-  object FindEdit: TEdit
-    AnchorSideLeft.Control = Label1
-    AnchorSideLeft.Side = asrBottom
-    AnchorSideTop.Control = SearchFieldComboBox
-    AnchorSideTop.Side = asrCenter
-    AnchorSideRight.Control = FindSpeedButton
-    Left = 463
-    Height = 34
-    Top = 5
-    Width = 365
-    Anchors = [akTop, akLeft, akRight]
-    BorderSpacing.Around = 5
-    TabOrder = 1
-  end
-  object FindSpeedButton: TSpeedButton
-    AnchorSideTop.Control = SearchFieldComboBox
-    AnchorSideTop.Side = asrCenter
-    AnchorSideRight.Control = Owner
-    AnchorSideRight.Side = asrBottom
-    Left = 833
-    Height = 33
-    Top = 6
-    Width = 30
-    Anchors = [akTop, akRight]
-    BorderSpacing.Around = 5
-    Glyph.Data = {
-      36040000424D3604000000000000360000002800000010000000100000000100
-      2000000000000004000064000000640000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000003300000033000000330000000BFFFFFF00000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000334780ABFF487FAAFF4881ACFF294C655EFFFFFF00000000000000
-      0000000000000000001A00000031000000330000003300000033000000300000
-      00333E81B3FF739DBFFF1FADFFFF5FB7E0AD4491C6FFFFFFFF00000000000000
-      00000000002E6B69689C7C7A79F97B7A78FF7B7978FF7B7978FF7E7A77F25B7D
-      97FFA29A92FFAFA39BFFA0C2D8FFB0ECFFFF3F90C6FFFFFFFF00000000000000
-      002E7D7C7AEA9C9D9DFFD1D3D5FFE3E5EAFFE2E4E9FFE3E4E9FFD1D1D3FF9C9A
-      9AFF83807DFFC6C2BDFFF4EBE4FFBFDEEAFF3F92CAFFFFFFFF000000001A7E7D
-      7CEAB4B3B6FFE6E4DFFFE9CD9AFFF1CA7EFFF5D388FFF9DA8DFFF2E1ADFFE6E5
-      E0FFB0AEB0FF908B8AFFEDE3DBFF368FCAFF00000000FFFFFF0072706E9BA2A1
-      A2FFEBE6E2FFE9BB75FFECC47CFFF1D089FFF5DA94FFFAE39CFFFDE89EFFFBE3
-      9BFFEBE8E3FFA09C9CFF5B87A5FF0000000000000000FFFFFF00848281F9DCDF
-      E1FFE6C28FFFEBC48AFFEED097FFF1D28EFFF5DD98FFFBEAA2FFFFF1A9FFFCE8
-      9DFFF5E2AEFFDBDCDEFF85807DF20000000000000000FFFFFF00858482FFF4F8
-      FCFFE1A95DFFF3DBB7FFF1D9ACFFF2D9A0FFF5DC96FFF8E59EFFFBEAA2FFF9E3
-      9CFFF7D98BFFF3F4FAFF858382FF0000000000000000FFFFFF00888584FFF7FC
-      FFFFDEA458FFF6E8D1FFF3DFBBFFF3DCADFFF4DCA3FFF5DC97FFF5DD98FFF4DA
-      93FFF3D186FFF5F9FFFF888584FF0000000000000000FFFFFF008A8886FFFDFF
-      FFFFDC9E53FFF6E7D4FFF6E6CDFFF4DFBAFFF3DCADFFF2D99FFFF1D28DFFF0CF
-      89FFEEC87BFFFBFDFFFF8A8786FF0000000000000000FFFFFF008D8A89F8EAED
-      F1FFE5B988FFECCCA3FFF9F1E5FFF6E6CCFFF3DFBBFFF1D9ACFFEFD097FFEBC3
-      7BFFF0D3A1FFE9EBF0FF8C8A88F80000000000000000FFFFFF0093908E83B3B2
-      B2FFFEFAF5FFDBA058FFECCBA2FFF9ECDCFFF6E7D0FFF2DDBBFFECC995FFE7B9
-      72FFFFFDF9FFB2B1B2FF93908E830000000000000000FFFFFF00000000009290
-      8EE5CDCDCFFFFFFDFAFFE7BC8AFFDA9C51FFDDA256FFDEA65AFFECC896FFFFFF
-      FCFFCCCCCEFF928F8EE5000000000000000000000000FFFFFF00000000000000
-      0000949290E5B8B8B9FFF5F8FCFFFFFFFFFFFFFFFFFFFFFFFFFFF5F7FCFFB8B7
-      B9FF949190E500000000000000000000000000000000FFFFFF00000000000000
-      00000000000099969483969392F7959391FF959291FF959291FF969392F79996
-      94830000000000000000000000000000000000000000FFFFFF00
-    }
-  end
+  ClientHeight = 526
+  ClientWidth = 845
   object RefObjTreeListView: TTreeListView
     AnchorSideLeft.Control = Owner
-    AnchorSideTop.Control = SearchFieldComboBox
-    AnchorSideTop.Side = asrBottom
+    AnchorSideTop.Control = Owner
     AnchorSideRight.Control = Owner
     AnchorSideRight.Side = asrBottom
     AnchorSideBottom.Control = OkBitBtn
     Left = 5
-    Height = 410
-    Top = 44
-    Width = 858
+    Height = 446
+    Top = 35
+    Width = 835
     Options = [tlvoToolTips, tlvoRightMouseSelects, tlvoStriped]
     Columns = <    
       item
@@ -134,20 +46,21 @@ object ChoiceRefObjForm: TChoiceRefObjForm
     BackGroundColor = clWindow
     Scrollbars = ssBoth
     HeaderVisible = True
-    TabOrder = 2
-    Anchors = [akTop, akLeft, akRight, akBottom]
+    TabOrder = 0
+    Anchors = [akLeft, akRight, akBottom]
   end
   object EditBitBtn: TBitBtn
     AnchorSideRight.Control = CancelBitBtn
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 383
+    Left = 360
     Height = 35
-    Top = 459
+    Top = 486
     Width = 170
     Anchors = [akRight, akBottom]
     BorderSpacing.Around = 5
     Caption = 'Редактировать...'
+    Enabled = False
     Glyph.Data = {
       36040000424D3604000000000000360000002800000010000000100000000100
       2000000000000004000064000000640000000000000000000000000000330000
@@ -184,15 +97,15 @@ object ChoiceRefObjForm: TChoiceRefObjForm
       0000000000000000000000000000000000000000000000000000000000000000
       000000000000C38AD9FFBD88D3FF0000000000000000FFFFFF00
     }
-    TabOrder = 3
+    TabOrder = 1
   end
   object CancelBitBtn: TBitBtn
     AnchorSideRight.Control = OkBitBtn
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 558
+    Left = 535
     Height = 35
-    Top = 459
+    Top = 486
     Width = 150
     Anchors = [akRight, akBottom]
     BorderSpacing.Around = 5
@@ -200,16 +113,16 @@ object ChoiceRefObjForm: TChoiceRefObjForm
     DefaultCaption = True
     Kind = bkCancel
     ModalResult = 2
-    TabOrder = 4
+    TabOrder = 2
   end
   object OkBitBtn: TBitBtn
     AnchorSideRight.Control = Owner
     AnchorSideRight.Side = asrBottom
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 713
+    Left = 690
     Height = 35
-    Top = 459
+    Top = 486
     Width = 150
     Anchors = [akRight, akBottom]
     BorderSpacing.Around = 5
@@ -217,6 +130,6 @@ object ChoiceRefObjForm: TChoiceRefObjForm
     DefaultCaption = True
     Kind = bkOK
     ModalResult = 1
-    TabOrder = 5
+    TabOrder = 3
   end
 end
