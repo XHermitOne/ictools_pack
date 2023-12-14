@@ -116,6 +116,9 @@ uses
 procedure TChoiceRefObjForm.SetRefObj(ARefObj: TICRefObjDataSource);
 begin
   FRefObj := ARefObj;
+
+  if FRefObj <> nil then
+    EditBitBtn.Enabled := FRefObj.CanEdit;
 end;
 
 procedure TChoiceRefObjForm.InitImages();
@@ -567,6 +570,8 @@ function TChoiceRefObjForm.GetSelectedCode(ARecordSet: TDataSet): String;
 var
   item: TTreeListItem;
 begin
+  if ARecordSet = nil then
+    ARecordSet := FRefObj.GetAllActiveRecs();
   item := RefObjTreeListView.Selected;
   if item <> nil then
   begin
@@ -654,11 +659,14 @@ function ChoiceRefObjCodDialogForm(ARefObj: TICRefObjDataSource; ADefaultCod: St
 var
   dlg: TChoiceRefObjForm;
 begin
+  Result := '';
   dlg := TChoiceRefObjForm.Create(Application);
   try
     dlg.SetRefObj(ARefObj);
     dlg.Init(AFields);
     dlg.ShowModal();
+    if dlg.ModalResult = mrOK then
+      Result := dlg.GetSelectedCode(nil);
   finally
     dlg.Free;
   end;

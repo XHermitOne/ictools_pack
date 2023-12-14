@@ -58,9 +58,9 @@ type
     destructor Destroy; override;
 
     { Получить объект записи по коду }
-    function GetRecByCod(ACod: String): TDataSet;
+    function GetRecByCod(ACod: String; ARecordSet: TDataSet): TDataSet;
     { Получить объект записи по значению колонки }
-    function GetRecByColValue(AColumnName: String; AColumnValue: String): TDataSet;
+    function GetRecByColValue(AColumnName: String; AColumnValue: String; ARecordSet: TDataSet): TDataSet;
     { Получить код по значению колонки }
     function GetCodByColValue(AColumnName: String; AColumnValue: String): String;
 
@@ -202,22 +202,27 @@ begin
 end;
 
 { Получить объект записи по коду }
-function TICRefObjDataSource.GetRecByCod(ACod: String): TDataSet;
+function TICRefObjDataSource.GetRecByCod(ACod: String; ARecordSet: TDataSet): TDataSet;
 begin
-  if DataSet.Locate(CodColumnName, ACod, []) then
-    Result := DataSet
+  if ARecordSet = nil then
+    ARecordSet := GetAllActiveRecs();
+  if ARecordSet.Locate(CodColumnName, ACod, []) then
+    Result := ARecordSet
   else
   begin
     logfunc.WarningMsgFmt('Код <%s> не найден в справочнике <%s>', [ACod, Name]);
-    Result := Nil;
+    Result := nil;
   end;
 end;
 
 { Получить объект записи по значению колонки }
-function TICRefObjDataSource.GetRecByColValue(AColumnName: String; AColumnValue: String): TDataSet;
+function TICRefObjDataSource.GetRecByColValue(AColumnName: String; AColumnValue: String; ARecordSet: TDataSet): TDataSet;
 begin
-  if DataSet.Locate(AColumnName, AColumnValue, []) then
-    Result := DataSet
+  if ARecordSet = nil then
+    ARecordSet := GetAllActiveRecs();
+
+  if ARecordSet.Locate(AColumnName, AColumnValue, []) then
+    Result := ARecordSet
   else
   begin
     logfunc.WarningMsgFmt('Запись, соответствующая <%s : (%s)> не найдена в справочнике <%s>', [AColumnName, AColumnValue, Name]);
@@ -230,8 +235,8 @@ function TICRefObjDataSource.GetCodByColValue(AColumnName: String; AColumnValue:
 var
   data_set: TDataSet;
 begin
-  data_set := GetRecByColValue(AColumnName, AColumnValue);
-  if data_set <> Nil then
+  data_set := GetRecByColValue(AColumnName, AColumnValue, nil);
+  if data_set <> nil then
     Result := data_set.FieldByName(CodColumnName).AsString
   else
     Result := '';
@@ -407,7 +412,7 @@ var
 begin
   Result := TStrDictionary.Create();
 
-  data_set := GetRecByCod(ACod);
+  data_set := GetRecByCod(ACod, nil);
   for i := 0 to AColumnNames.Count - 1 do
   begin
     column_name := AColumnNames.Strings[i];
@@ -421,7 +426,7 @@ function TICRefObjDataSource.GetColumnValue(ACod, AColumnName: String): Variant;
 var
   data_set: TDataSet;
 begin
-  data_set := GetRecByCod(ACod);
+  data_set := GetRecByCod(ACod, nil);
   Result := data_set.FieldValues[AColumnName];
 end;
 
@@ -430,8 +435,8 @@ function TICRefObjDataSource.GetColumnNameValue(ACod: String): AnsiString;
 var
   data_set: TDataSet;
 begin
-  data_set := GetRecByCod(ACod);
-  Result := data_set.FieldValues[NameColumnName].AsString;
+  data_set := GetRecByCod(ACod, nil);
+  Result := data_set.FieldByName(NameColumnName).AsString;
 end;
 
 
@@ -453,19 +458,19 @@ end;
 { В справочнике присутствует код? }
 function TICRefObjDataSource.HasCod(ACod: String): Boolean;
 begin
-  Result := GetRecByCod(ACod) <> nil;
+  Result := GetRecByCod(ACod, nil) <> nil;
 end;
 
 { В справочнике присутствует наименование? }
 function TICRefObjDataSource.HasName(AName: AnsiString): Boolean;
 begin
-  Result := GetRecByColValue(NameColumnName, AName) <> nil;
+  Result := GetRecByColValue(NameColumnName, AName, nil) <> nil;
 end;
 
 { Элемент справочника с кодом активен? }
 function TICRefObjDataSource.IsActive(ACod: String): Boolean;
 begin
-  Result := GetRecByCod(ACod).FieldValues[ActiveColumnName].AsBoolean;
+  Result := GetRecByCod(ACod, nil).FieldValues[ActiveColumnName].AsBoolean;
 end;
 
 { Получить длину кода уровня }
@@ -551,13 +556,38 @@ end;
 function TICRefObjDataSource.GetAllActiveRecs(): TDataSet;
 var
   sql_query: TSQlQuery;
+  field: TField;
+  i: Integer;
+  sql_fields: String;
 begin
+  Result := nil;
   sql_query := TSQLQuery(DataSet);
   if sql_query <> nil then
   begin
     sql_query.Close;
-    sql_query.SQL.Text := Format('SELECT * FROM %s WHERE %s = 1', [TableName, ActiveColumnName]);
-    sql_query.Open;
+
+    // Заполнение полей для вставки в SQL выражение
+    sql_fields := '';
+    for i := 0 to sql_query.FieldDefs.Count - 1 do
+      if sql_query.FieldDefs[i].DataType = ftString then
+        sql_fields := sql_fields + Format('TRIM(%s) AS %s, ', [sql_query.FieldDefs[i].Name, sql_query.FieldDefs[i].Name])
+      else
+        sql_fields := sql_fields + Format('%s, ', [sql_query.FieldDefs[i].Name]);
+    sql_fields := strfunc.ReplaceEnd(sql_fields, ', ');
+
+    try
+      sql_query.SQL.Text := Format('SELECT %s FROM %s WHERE %s = 1', [sql_fields, TableName, ActiveColumnName]);
+      sql_query.Open;
+    except
+      logfunc.FatalMsgFmt('Ошибка. SQL: %s', [sql_query.SQL.Text], True);
+      Exit;
+    end;
+
+    //for i := 0 to sql_query.Fields.Count - 1 do
+    //begin
+    //  field := sql_query.Fields[i];
+    //  logfunc.DebugMsgFmt('Поле <%s : %d : %s>', [field.DisplayName, field.DataType, field.DisplayText], True);
+    //end;
   end;
   Result := sql_query;
 end;
@@ -641,8 +671,11 @@ end;
 
 { Запустить процедуру выбора записи из справочника }
 function TICRefObjDataSource.ChoiceRecord(): TDataSet;
+var
+  selected_cod: String;
 begin
-  Result := Nil;
+  selected_cod := ChoiceCod();
+  Result := GetRecByCod(selected_cod, nil);
 end;
 
 { Запустить процедуру выбора кода из справочника }
