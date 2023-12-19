@@ -70,6 +70,9 @@ begin
   begin
     FSelectedCod := FRefObj.ChoiceCod();
     ref_name := FRefObj.GetColumnNameValue(FSelectedCod);
+    // Закрыть БД после выдора кода
+    //FRefObj.DataSet.Close;
+
     Text := ref_name;
   end;
 end;

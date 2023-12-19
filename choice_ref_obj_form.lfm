@@ -12,10 +12,10 @@ object ChoiceRefObjForm: TChoiceRefObjForm
     AnchorSideRight.Control = Owner
     AnchorSideRight.Side = asrBottom
     AnchorSideBottom.Control = OkBitBtn
-    Left = 5
+    Left = 0
     Height = 446
     Top = 35
-    Width = 835
+    Width = 845
     Options = [tlvoToolTips, tlvoRightMouseSelects, tlvoStriped]
     Columns = <    
       item
@@ -39,8 +39,8 @@ object ChoiceRefObjForm: TChoiceRefObjForm
     SelectedFont.Color = clHighlightText
     SelectedHotTrackFont.Color = clHighlightText
     SelectedHotTrackFont.Style = [fsBold, fsUnderline]
-    StripedOddColor = clWindow
-    StripedEvenColor = 14745599
+    StripedOddColor = clGray
+    StripedEvenColor = clGrayText
     SelectBackColor = clHighlight
     ButtonColor = clWindow
     BackGroundColor = clWindow
