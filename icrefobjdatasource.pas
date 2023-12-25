@@ -426,8 +426,10 @@ function TICRefObjDataSource.GetColumnValue(ACod, AColumnName: String): Variant;
 var
   data_set: TDataSet;
 begin
+  Result := '';
   data_set := GetRecByCod(ACod, nil);
-  Result := data_set.FieldValues[AColumnName];
+  if data_set <> nil then
+    Result := data_set.FieldValues[AColumnName];
 end;
 
 { Получить наименование по коду }
@@ -435,8 +437,10 @@ function TICRefObjDataSource.GetColumnNameValue(ACod: String): AnsiString;
 var
   data_set: TDataSet;
 begin
+  Result := '';
   data_set := GetRecByCod(ACod, nil);
-  Result := data_set.FieldByName(NameColumnName).AsString;
+  if data_set <> nil then
+    Result := data_set.FieldByName(NameColumnName).AsString;
 end;
 
 

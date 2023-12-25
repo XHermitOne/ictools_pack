@@ -6,6 +6,7 @@ object ChoiceRefObjForm: TChoiceRefObjForm
   Caption = 'ChoiceRefObjForm'
   ClientHeight = 526
   ClientWidth = 845
+  LCLVersion = '2.2.6.0'
   object RefObjTreeListView: TTreeListView
     AnchorSideLeft.Control = Owner
     AnchorSideTop.Control = Owner

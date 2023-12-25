@@ -117,6 +117,11 @@ procedure TChoiceRefObjForm.SetRefObj(ARefObj: TICRefObjDataSource);
 begin
   FRefObj := ARefObj;
 
+  { Открыть набор записей если не открыт }
+  if FRefObj.DataSet <> nil then
+    if not FRefObj.DataSet.Active then
+      FRefObj.DataSet.Active := True;
+
   if FRefObj <> nil then
     EditBitBtn.Enabled := FRefObj.CanEdit;
 end;
