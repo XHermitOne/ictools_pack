@@ -6,7 +6,6 @@ object ChoiceRefObjForm: TChoiceRefObjForm
   Caption = 'ChoiceRefObjForm'
   ClientHeight = 526
   ClientWidth = 845
-  LCLVersion = '2.2.6.0'
   object RefObjTreeListView: TTreeListView
     AnchorSideLeft.Control = Owner
     AnchorSideTop.Control = Owner
@@ -40,8 +39,8 @@ object ChoiceRefObjForm: TChoiceRefObjForm
     SelectedFont.Color = clHighlightText
     SelectedHotTrackFont.Color = clHighlightText
     SelectedHotTrackFont.Style = [fsBold, fsUnderline]
-    StripedOddColor = clGray
-    StripedEvenColor = clGrayText
+    StripedOddColor = clForm
+    StripedEvenColor = clWindow
     SelectBackColor = clHighlight
     ButtonColor = clWindow
     BackGroundColor = clWindow
