@@ -23,6 +23,8 @@ type
     { Текущий выбранный код справочника }
     FSelectedCod: String;
 
+    procedure SetSelectedCod(ASelectedCod: String);
+
   public
     // Create
     constructor Create(AOwner:TComponent); override;
@@ -33,7 +35,7 @@ type
 
   published
     property RefObj: TICRefObjDataSource read FRefObj write FRefObj;
-    property SelectedCod: String read FSelectedCod;
+    property SelectedCod: String read FSelectedCod write SetSelectedCod;
 
   end;
 
@@ -75,6 +77,16 @@ begin
 
     Text := ref_name;
   end;
+end;
+
+procedure TICRefObjChoiceEditButton.SetSelectedCod(ASelectedCod: String);
+begin
+  FSelectedCod := ASelectedCod;
+
+  if FRefObj <> nil then
+    Text := FRefObj.GetColumnNameValue(FSelectedCod)
+  else
+    Text := '';
 end;
 
 end.

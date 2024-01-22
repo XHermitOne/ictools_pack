@@ -2,7 +2,7 @@
 Модуль компонента работы с набором записей как с иерархическим справочником.
 Иерархия организуется при помощи много уровневого кода.
 
-Версия: 0.0.1.1
+Версия: 0.0.1.2
 }
 unit ICRefObjDataSource;
 
@@ -74,9 +74,9 @@ type
                                     ADoSort: Boolean;
                                     AOrderBy: String): TDataSet;
     { Поиск записей по значениям нескольких колонок }
-		function SearchRecords(AColumnValues: TStrDictionary): TDataSet;
+	function SearchRecords(AColumnValues: TStrDictionary): TDataSet;
     { Поиск кодов по значениям нескольких колонок }
-		function SearchCodes(AColumnValues: TStrDictionary): TStringList;
+	function SearchCodes(AColumnValues: TStrDictionary): TStringList;
     { Поиск записи по содержимому колонки }
     function FindRecByColContent(AColumnName: String; ASearchText: String;
                                  ACaseSensitive: Boolean;
@@ -85,16 +85,16 @@ type
     { Получить словарь значений запрашиваемых колонок по коду }
     function GetColumnValues(ACod: String; AColumnNames: TStringList): TStrDictionary;
     { Получить значение колонки по коду }
-		function GetColumnValue(ACod, AColumnName: String): Variant;
+	function GetColumnValue(ACod, AColumnName: String): Variant;
     { Получить наименование по коду }
-		function GetColumnNameValue(ACod: String): AnsiString;
+	function GetColumnNameValue(ACod: String): AnsiString;
 
     { Пустой справочник? }
     function IsEmpty(): Boolean;
     { В справочнике присутствует код? }
-		function HasCod(ACod: String): Boolean;
+	function HasCod(ACod: String): Boolean;
     { В справочнике присутствует наименование? }
-		function HasName(AName: AnsiString): Boolean;
+	function HasName(AName: AnsiString): Boolean;
     { Элемент справочника с кодом активен? }
     function IsActive(ACod: String): Boolean;
 
@@ -120,7 +120,7 @@ type
     function IsGrandParentLevelCod(ACod: String): Boolean;
 
     { Запустить справочник на редактирование }
-		function Edit(): Boolean;
+	function Edit(): Boolean;
     { Запустить процедуру выбора записи из справочника }
     function ChoiceRecord(): TDataSet;
     { Запустить процедуру выбора кода из справочника }
